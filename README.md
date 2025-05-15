@@ -1,108 +1,168 @@
-BTS Guru Daemon Service
+# BTS Guru Daemon Service
 
-## Project Overview
-Create a Laravel 12 application that acts as a proxy for RapidAPI sports data, providing real-time score updates via WebSockets. This application will:
-1. Cache API responses in Redis to reduce direct calls to RapidAPI
-2. Stream real-time sports data updates via Laravel Reverb WebSockets
-3. Run background jobs to continuously fetch the latest scores
-4. Implement API key authentication for end-users
-5. Bypass RapidAPI's throttling and user limitations
+[![Laravel](https://img.shields.io/badge/Laravel-12.x-FF2D20.svg?style=flat&logo=laravel&logoColor=white)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4.svg?style=flat&logo=php&logoColor=white)](https://php.net)
+[![Redis](https://img.shields.io/badge/Redis-6.x-DC382D.svg?style=flat&logo=redis&logoColor=white)](https://redis.io)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14.x-336791.svg?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 
-## Architecture Overview
+A high-performance real-time sports data streaming service built with Laravel 12. BTS Guru Daemon provides instant score updates and sports statistics via WebSockets while intelligently managing API consumption.
 
-### 1. Data Flow Architecture
-- RapidAPI Sports Data → Laravel Background Workers → Redis Cache → WebSocket Broadcasting → End Users
-- Scheduled polling jobs fetch fresh data at optimal intervals based on sport type
-- Change detection identifies score updates and broadcasts only meaningful changes
-- Redis powers both caching and pub/sub mechanisms for real-time updates
+## Features
 
-### 2. Key Technical Components
-- **Laravel Reverb**: For WebSocket server implementation
-- **Redis**: For caching, queues, and pub/sub messaging
-- **Laravel Horizon**: For queue monitoring and management
-- **Laravel Sanctum**: For API authentication
-- **Background Jobs**: For continuous data polling with auto-scaling capacity
+- **Real-time Updates**: Instant sports data delivery via WebSockets
+- **Intelligent Caching**: Optimized Redis caching with sport-specific TTLs
+- **Background Processing**: Continuous data polling with Laravel queues
+- **API Authentication**: Secure API access with Laravel Sanctum
+- **Scalable Architecture**: Designed for high-traffic and concurrent connections
+- **Comprehensive Monitoring**: Queue and performance monitoring with Laravel Horizon
 
-## Implementation Roadmap
+## Tech Stack
 
-### Phase 1: Foundation Setup (Week 1)
-1. Initialize Laravel 12 project with required packages
-2. Set up database migrations for user, API keys, and sports data models
-3. Configure Redis for caching and queue processing
-4. Implement basic API authentication with rate limiting
+- **Backend**: Laravel 12, PHP 8.2+
+- **Database**: PostgreSQL
+- **Caching & Queues**: Redis
+- **WebSockets**: Laravel Reverb
+- **Authentication**: Laravel Sanctum
+- **Monitoring**: Laravel Horizon
 
-### Phase 2: RapidAPI Integration (Week 1-2)
-1. Create service layer for communicating with RapidAPI sports endpoints
-2. Implement intelligent caching strategies for different data types
-3. Build change detection algorithms for identifying score updates
-4. Create data normalization to handle different sports formats consistently
+## Getting Started
 
-### Phase 3: Real-time Infrastructure (Week 2-3)
-1. Configure Laravel Reverb for WebSocket communication
-2. Implement event broadcasting system for score updates
-3. Create channel subscription management for different sports/leagues
-4. Build background polling workers with automatic scaling
+### Prerequisites
 
-### Phase 4: API Layer (Week 3-4)
-1. Create RESTful API endpoints for sports data access
-2. Implement WebSocket subscription management API
-3. Build user dashboard for monitoring usage and managing API keys
-4. Add comprehensive API documentation with OpenAPI/Swagger
+- PHP 8.2 or higher
+- Composer
+- Redis server
+- PostgreSQL database
 
-### Phase 5: Monitoring & Production Readiness (Week 4)
-1. Set up Horizon dashboard for queue monitoring
-2. Implement logging and alerting for service disruptions
-3. Create deployment pipeline for production environment
-4. Add performance optimization for high-traffic scenarios
+### Installation
 
-## Core Technology Stack
-- Laravel 12 (PHP 8.2+)
-- Redis (for caching, queues, and pub/sub)
-- MySQL/PostgreSQL (for persistent storage)
-- Laravel Reverb (for WebSockets)
-- Laravel Horizon (for queue monitoring)
-- Laravel Sanctum (for API authentication)
-- Supervisor (for process management)
+1. Clone the repository
 
-## Key Considerations
+```bash
+git clone https://github.com/your-username/bts-daemon.git
+cd bts-daemon
+```
 
-### Polling Frequency
-- Live events: 10-15 seconds for most sports
-- Higher frequency (5-10 seconds) for fast-paced sports like basketball
-- Lower frequency (30-60 seconds) for slower sports like baseball
-- Auto-adjustment based on game period (more frequent during crucial moments)
+2. Install dependencies
 
-### Caching Strategy
-- Short TTL (30-60 seconds) for live game data
-- Longer TTL (5-15 minutes) for static data like team information
-- Redis hash structures for efficient storage of game states
-- Intelligent invalidation based on game status changes
+```bash
+composer install
+```
 
-### Scalability Considerations
-- Horizontal scaling of WebSocket servers using Redis pub/sub
-- Worker pool auto-scaling based on number of live games
-- Rate limiting based on user subscription tiers
-- Connection pooling to reduce database load
+3. Set up environment variables
 
-## Implementation Details
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-### Background Data Fetching
-- Create Laravel command `sports:poll` that runs continuously
-- Implement worker processes that scale with number of active games
-- Use queues to distribute polling tasks across multiple workers
-- Implement exponential backoff for failed API requests
+4. Configure your database and Redis connections in the `.env` file
 
-### WebSocket Implementation
-- Use Laravel Reverb for WebSocket server
-- Create channel naming convention: `sports.{sport}.{league}.{match_id}`
-- Implement presence channels for user tracking
-- Add authorization middleware for private channels
+5. Run migrations
 
-### Deployment Architecture
-- Redis cluster for high availability
-- Multiple WebSocket servers behind load balancer
-- Worker processes managed by Supervisor
-- Monitoring via Laravel Horizon dashboard
+```bash
+php artisan migrate
+```
+
+6. Start the development server
+
+```bash
+php artisan serve
+```
+
+### Running Background Workers
+
+Start the queue worker to process background jobs:
+
+```bash
+php artisan queue:work
+```
+
+For production environments, use Supervisor or one of these methods to keep the worker running:
+
+**Using Supervisor (Recommended):**
+Create a configuration file and run Supervisor to manage the process.
+
+**Using nohup:**
+```bash
+nohup php artisan queue:work > storage/logs/queue-worker.log 2>&1 &
+```
+
+**Using Screen:**
+```bash
+screen -S queue-worker
+php artisan queue:work
+# Detach with Ctrl+A followed by D
+```
+
+### WebSocket Server
+
+Start the Laravel Reverb WebSocket server:
+
+```bash
+php artisan reverb:start
+```
+
+## API Documentation
+
+API documentation is available at `/docs/api` when running the application.
+
+### WebSocket Channels
+
+Clients can subscribe to the following channel patterns:
+
+- `sports.{sport}.leagues.{league}.matches.{match}`
+
+Example: `sports.football.leagues.premier-league.matches.123`
+
+## Available Commands
+
+### API Service Sync
+
+The `api:sync` command makes requests to external APIs and can run in recurring mode:
+
+```bash
+# Run once
+php artisan api:sync
+
+# Run in recurring mode (every 3 seconds)
+php artisan api:sync --recurring
+```
+
+See the [full command documentation](docs/api-service-sync-command.md) for more details.
+
+## Monitoring
+
+Access the Laravel Horizon dashboard to monitor queues and jobs:
+
+```bash
+# Start Horizon
+php artisan horizon
+
+# Access the dashboard at
+http://your-app-url/horizon
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+
+- [Laravel](https://laravel.com)
+- [Laravel Reverb](https://reverb.laravel.com)
+- [Laravel Horizon](https://laravel.com/docs/horizon)
+- [Redis](https://redis.io)
 
 ## Required Environment Configuration
 ```
