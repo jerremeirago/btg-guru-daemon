@@ -1,0 +1,28 @@
+---
+title: BTS Guru Daemon Service - Data Flow
+---
+sequenceDiagram
+    participant RA as RapidAPI
+    participant PJ as Polling Jobs
+    participant RC as Redis Cache
+    participant DP as Data Processor
+    participant WS as WebSocket Server
+    participant EU as End User
+
+    PJ->>RA: Request Sports Data
+    RA-->>PJ: Return Data
+    PJ->>RC: Cache Response
+    PJ->>DP: Process Data Changes
+    
+    Note over DP: Compare with previous data
+    
+    alt Data Changed
+        DP->>WS: Broadcast Update
+        WS->>EU: Send Real-time Update
+    end
+    
+    EU->>WS: Subscribe to Channel
+    
+    loop Every X Minutes (Sport Dependent)
+        PJ->>RA: Poll for Updates
+    end

@@ -1,0 +1,33 @@
+---
+title: BTS Guru Daemon Service - WebSocket Channel Structure
+---
+graph TD
+    A[WebSocket Channels] --> B[Public Channels]
+    A --> C[Private Channels]
+    A --> D[Presence Channels]
+    
+    B --> E[sports.{sport}.status]
+    B --> F[sports.{sport}.leagues.status]
+    
+    C --> G[sports.{sport}.leagues.{league}.matches.{match}]
+    C --> H[sports.{sport}.leagues.{league}.matches.live]
+    C --> I[sports.{sport}.leagues.{league}.teams.{team}]
+    
+    D --> J[presence-sports.{sport}.viewers]
+    D --> K[presence-sports.{sport}.leagues.{league}.viewers]
+    D --> L[presence-sports.{sport}.leagues.{league}.matches.{match}.viewers]
+    
+    subgraph "Channel Naming Convention"
+        M[Pattern: sports.{sport}.leagues.{league}.matches.{match}]
+        N[Example: sports.football.leagues.premier-league.matches.123]
+    end
+    
+    subgraph "Authentication"
+        O[User Authentication via Sanctum]
+        P[Subscription Tier Check]
+        Q[Rate Limiting per Tier]
+    end
+    
+    C --> O
+    O --> P
+    P --> Q

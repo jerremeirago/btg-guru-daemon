@@ -1,0 +1,116 @@
+---
+title: BTS Guru Daemon Service - Database Schema
+---
+erDiagram
+    USERS ||--o{ API_KEYS : has
+    USERS ||--o{ SUBSCRIPTIONS : has
+    SPORTS ||--o{ LEAGUES : contains
+    LEAGUES ||--o{ TEAMS : contains
+    LEAGUES ||--o{ MATCHES : contains
+    TEAMS ||--o{ MATCHES : participates
+    MATCHES ||--o{ EVENTS : contains
+    USERS ||--o{ API_USAGE : generates
+
+    USERS {
+        id bigint PK
+        name varchar
+        email varchar
+        password varchar
+        subscription_tier varchar
+        subscription_expires_at timestamp
+        remember_token varchar
+        created_at timestamp
+        updated_at timestamp
+    }
+
+    API_KEYS {
+        id bigint PK
+        user_id bigint FK
+        name varchar
+        key varchar
+        last_used_at timestamp
+        created_at timestamp
+        updated_at timestamp
+    }
+
+    SUBSCRIPTIONS {
+        id bigint PK
+        user_id bigint FK
+        tier varchar
+        starts_at timestamp
+        expires_at timestamp
+        status varchar
+        created_at timestamp
+        updated_at timestamp
+    }
+
+    SPORTS {
+        id bigint PK
+        name varchar
+        slug varchar
+        api_id varchar
+        active boolean
+        created_at timestamp
+        updated_at timestamp
+    }
+
+    LEAGUES {
+        id bigint PK
+        sport_id bigint FK
+        name varchar
+        slug varchar
+        api_id varchar
+        country varchar
+        logo_url varchar
+        active boolean
+        created_at timestamp
+        updated_at timestamp
+    }
+
+    TEAMS {
+        id bigint PK
+        league_id bigint FK
+        name varchar
+        slug varchar
+        api_id varchar
+        logo_url varchar
+        created_at timestamp
+        updated_at timestamp
+    }
+
+    MATCHES {
+        id bigint PK
+        league_id bigint FK
+        home_team_id bigint FK
+        away_team_id bigint FK
+        api_id varchar
+        status varchar
+        start_time timestamp
+        home_score int
+        away_score int
+        last_updated timestamp
+        created_at timestamp
+        updated_at timestamp
+    }
+
+    EVENTS {
+        id bigint PK
+        match_id bigint FK
+        type varchar
+        minute int
+        team_id bigint FK
+        player_name varchar
+        api_id varchar
+        created_at timestamp
+        updated_at timestamp
+    }
+
+    API_USAGE {
+        id bigint PK
+        user_id bigint FK
+        endpoint varchar
+        method varchar
+        status_code int
+        response_time int
+        created_at timestamp
+    }

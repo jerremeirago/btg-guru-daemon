@@ -1,0 +1,46 @@
+---
+title: BTS Guru Daemon Service - Component Structure
+---
+classDiagram
+    class RapidApiService {
+        +fetchData(sport, league, match)
+        +getTeams(league)
+        +getMatches(league, date)
+        +getLeagues(sport)
+        -handleRateLimits()
+        -cacheResponse()
+    }
+    
+    class DataProcessor {
+        +processMatchData(data)
+        +detectChanges(oldData, newData)
+        +normalizeData(data)
+        -generateDiff(oldData, newData)
+    }
+    
+    class EventBroadcaster {
+        +broadcastUpdate(channel, data)
+        +broadcastScoreChange(match, score)
+        +broadcastStatusChange(match, status)
+        -formatEventData(data)
+    }
+    
+    class ApiController {
+        +getMatches(request)
+        +getTeams(request)
+        +getLeagues(request)
+        -validateRequest(request)
+        -applyRateLimits(user)
+    }
+    
+    class PollingJob {
+        +handle()
+        -determinePollingFrequency(sport, status)
+        -shouldPoll(match)
+    }
+    
+    RapidApiService --> DataProcessor
+    DataProcessor --> EventBroadcaster
+    PollingJob --> RapidApiService
+    ApiController --> RapidApiService
+    ApiController --> DataProcessor

@@ -1,0 +1,19 @@
+---
+title: BTS Guru Daemon Service - System Architecture
+---
+flowchart TD
+    A[RapidAPI] -->|HTTP Requests| B[BTS Guru Daemon Service\nLaravel 12]
+    B -->|WebSockets| C[End Users]
+    B <-->|Cache/Queue/PubSub| D[(Redis)]
+    B <-->|Persistent Storage| E[(PostgreSQL)]
+    
+    subgraph "BTS Guru Daemon Service"
+        F[Data Fetching Layer] -->|Polling| G[Data Processing Layer]
+        G -->|Change Detection| H[Broadcasting Layer]
+        I[API Layer] -->|Authentication| J[Rate Limiting]
+        I -->|Data Access| G
+    end
+    
+    A -.->|Polling| F
+    H -.->|WebSockets| C
+    I -.->|REST API| C

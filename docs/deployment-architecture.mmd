@@ -1,0 +1,32 @@
+---
+title: BTS Guru Daemon Service - Deployment Architecture
+---
+flowchart TD
+    subgraph "Production Environment"
+        A[Nginx Web Server] -->|Proxy| B[Laravel Application]
+        B <--> C[(PostgreSQL Database)]
+        B <--> D[(Redis Server)]
+        
+        E[Laravel Horizon] -->|Queue Monitoring| B
+        F[Supervisor] -->|Process Management| B
+        F -->|Process Management| E
+        F -->|Process Management| G
+        
+        G[Laravel Reverb] -->|WebSockets| H[End Users]
+        
+        I[Background Workers] -->|Polling Jobs| B
+        I -->|Processing Jobs| B
+        I -->|Broadcasting Jobs| B
+        
+        B -->|API Requests| H
+        G -->|WebSocket Events| H
+    end
+    
+    subgraph "External Services"
+        J[RapidAPI] <-->|HTTP Requests| B
+    end
+    
+    subgraph "Monitoring & Logging"
+        K[Laravel Telescope] -->|Debug & Monitor| B
+        L[Log Aggregation] -->|Collect Logs| B
+    end
