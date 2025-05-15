@@ -2,7 +2,7 @@
 title: BTS Guru Daemon Service - System Architecture
 ---
 flowchart TD
-    A[RapidAPI] -->|HTTP Requests| B[BTS Guru Daemon Service\nLaravel 12]
+    A[RapidAPI] -->|HTTP Requests| B[BTS Guru Daemon Service]
     B -->|WebSockets| C[End Users]
     B <-->|Cache/Queue/PubSub| D[(Redis)]
     B <-->|Persistent Storage| E[(PostgreSQL)]

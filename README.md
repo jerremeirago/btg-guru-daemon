@@ -39,8 +39,8 @@ A high-performance real-time sports data streaming service built with Laravel 12
 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/bts-daemon.git
-cd bts-daemon
+git clone https://github.com/your-username/bts-daemon-guru.git
+cd bts-daemon-guru
 ```
 
 2. Install dependencies
