@@ -35,4 +35,24 @@ return [
         ],
     ],
 
+    'rapidapi' => [
+        'key' => env('RAPIDAPI_KEY'),
+        'host' => env('RAPIDAPI_HOST'),
+        'base_url' => env('RAPIDAPI_BASE_URL'),
+        
+        // Cache TTL settings (in seconds)
+        'cache' => [
+            'default' => 300, // 5 minutes
+            'live_matches' => 60, // 1 minute
+            'standings' => 3600, // 1 hour
+            'team_info' => 86400, // 24 hours
+        ],
+        
+        // Rate limiting settings
+        'rate_limits' => [
+            'max_requests_per_day' => 500,
+            'max_requests_per_minute' => 5,
+        ],
+    ],
+
 ];

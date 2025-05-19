@@ -18,7 +18,7 @@
   - [x] Pub/Sub for WebSockets
 
 ## Phase 2: RapidAPI Integration
-- [ ] Create service classes for RapidAPI integration
+- [x] Create service classes for RapidAPI integration
 - [ ] Implement caching strategies for different data types
 - [ ] Build data normalization for consistent formats across sports
 - [ ] Create change detection algorithms for identifying score updates
