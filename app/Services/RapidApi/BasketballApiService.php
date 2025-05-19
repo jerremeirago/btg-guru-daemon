@@ -2,24 +2,192 @@
 
 namespace App\Services\RapidApi;
 
+use App\Models\League;
+use App\Models\Player;
+use App\Models\SportMatch;
+use App\Models\Standing;
+use App\Models\Team;
+use App\Services\CacheService;
+use App\Services\ChangeDetectionService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class BasketballApiService extends RapidApiService
 {
+    /**
+     * The cache service instance.
+     *
+     * @var \App\Services\CacheService
+     */
+    protected CacheService $cacheService;
+
+    /**
+     * The change detection service instance.
+     *
+     * @var \App\Services\ChangeDetectionService
+     */
+    protected ChangeDetectionService $changeDetectionService;
+
+    /**
+     * Create a new basketball API service instance.
+     *
+     * @param \App\Services\CacheService $cacheService
+     * @param \App\Services\ChangeDetectionService $changeDetectionService
+     * @return void
+     */
+    public function __construct(
+        CacheService $cacheService,
+        ChangeDetectionService $changeDetectionService
+    ) {
+        parent::__construct();
+        $this->cacheService = $cacheService;
+        $this->changeDetectionService = $changeDetectionService;
+    }
+
+    /**
+     * Get the sport type for this service.
+     *
+     * @return string
+     */
+    protected function getSportType(): string
+    {
+        return 'basketball';
+    }
+    
     /**
      * Get basketball matches for a specific date.
      *
      * @param int $day
      * @param int $month
      * @param int $year
+     * @param bool $bypassCache Whether to bypass cache and fetch fresh data
      * @return array
      */
-    public function getMatchesByDate(int $day, int $month, int $year): array
+    public function getMatchesByDate(int $day, int $month, int $year, bool $bypassCache = false): array
     {
-        $endpoint = "api/basketball/matches/{$day}/{$month}/{$year}";
-        $response = $this->makeRequest($endpoint);
+        $cacheKey = "basketball:matches:{$day}:{$month}:{$year}";
         
-        return $this->normalizeResponse($response);
+        // Function to fetch fresh data from API
+        $fetchDataCallback = function () use ($day, $month, $year) {
+            $endpoint = "api/basketball/matches/{$day}/{$month}/{$year}";
+            $response = $this->makeRequest($endpoint);
+            
+            // Normalize the response data
+            $normalizedData = $this->normalizeResponse($response);
+            
+            // Process each match for change detection
+            if (!empty($normalizedData['data'])) {
+                $processedMatches = [];
+                
+                foreach ($normalizedData['data'] as $match) {
+                    // Detect changes in match data
+                    $processedMatch = $this->changeDetectionService->detectChanges($match);
+                    $processedMatches[] = $processedMatch;
+                }
+                
+                $normalizedData['data'] = $processedMatches;
+            }
+            
+            // Store the data in the database
+            $this->storeMatchData($normalizedData);
+            
+            return $normalizedData;
+        };
+        
+        // If bypassing cache, fetch fresh data directly
+        if ($bypassCache) {
+            return $fetchDataCallback();
+        }
+        
+        // Otherwise use cache with the callback
+        return $this->cacheService->remember($cacheKey, $fetchDataCallback, 'upcoming_matches');
+    }
+    
+    /**
+     * Store match data in the database.
+     *
+     * @param array $data
+     * @return void
+     */
+    protected function storeMatchData(array $data): void
+    {
+        // Skip if no data or error in response
+        if (empty($data['data']) || isset($data['error'])) {
+            return;
+        }
+        
+        try {
+            DB::beginTransaction();
+            
+            foreach ($data['data'] as $matchData) {
+                // Store league data if available
+                if (!empty($matchData['league'])) {
+                    $league = League::updateOrCreate(
+                        ['id' => $matchData['league']['id']],
+                        [
+                            'name' => $matchData['league']['name'],
+                            'sport_type' => $this->getSportType(),
+                            'country' => $matchData['league']['country'] ?? null,
+                            'logo_url' => $matchData['league']['logo'] ?? null,
+                            'additional_data' => json_encode($matchData['league']),
+                        ]
+                    );
+                }
+                
+                // Store home team data
+                if (!empty($matchData['home_team'])) {
+                    $homeTeam = Team::updateOrCreate(
+                        ['id' => $matchData['home_team']['id']],
+                        [
+                            'name' => $matchData['home_team']['name'],
+                            'sport_type' => $this->getSportType(),
+                            'logo_url' => $matchData['home_team']['logo'] ?? null,
+                            'additional_data' => json_encode($matchData['home_team']),
+                        ]
+                    );
+                }
+                
+                // Store away team data
+                if (!empty($matchData['away_team'])) {
+                    $awayTeam = Team::updateOrCreate(
+                        ['id' => $matchData['away_team']['id']],
+                        [
+                            'name' => $matchData['away_team']['name'],
+                            'sport_type' => $this->getSportType(),
+                            'logo_url' => $matchData['away_team']['logo'] ?? null,
+                            'additional_data' => json_encode($matchData['away_team']),
+                        ]
+                    );
+                }
+                
+                // Store match data
+                $match = SportMatch::updateOrCreate(
+                    ['id' => $matchData['id']],
+                    [
+                        'league_id' => $matchData['league']['id'] ?? null,
+                        'home_team_id' => $matchData['home_team']['id'] ?? null,
+                        'away_team_id' => $matchData['away_team']['id'] ?? null,
+                        'sport_type' => $this->getSportType(),
+                        'status' => $matchData['status'] ?? 'unknown',
+                        'match_date' => Carbon::parse($matchData['date'] ?? now()),
+                        'home_score' => $matchData['home_score'] ?? 0,
+                        'away_score' => $matchData['away_score'] ?? 0,
+                        'additional_data' => json_encode($matchData),
+                    ]
+                );
+            }
+            
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            // Log error but don't throw to prevent API functionality from breaking
+            Log::error('Failed to store basketball match data: ' . $e->getMessage(), [
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
     }
 
     /**

@@ -53,6 +53,13 @@ return [
             'max_requests_per_day' => 500,
             'max_requests_per_minute' => 5,
         ],
+        
+        // Retry mechanism settings
+        'retry' => [
+            'max_attempts' => 3,
+            'base_delay_ms' => 1000, // 1 second
+            'max_delay_ms' => 10000, // 10 seconds
+        ],
     ],
 
 ];
