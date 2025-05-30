@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laravel Echo Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.3.0/dist/web/pusher.min.js"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .card {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        pre {
+            background: #f1f1f1;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .connected { background: #d4edda; color: #155724; }
+        .disconnected { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Laravel Echo Test</h1>
+    
+    <div class="card">
+        <h2>Connection: <span id="status" class="status disconnected">Disconnected</span></h2>
+        <div>
+            <button id="connect">Connect</button>
+            <button id="disconnect" disabled>Disconnect</button>
+            <button id="clear">Clear Log</button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>Event Log</h2>
+        <pre id="log">// Events will appear here</pre>
+    </div>
+    
+    <script>
+        // DOM Elements
+        const statusEl = document.getElementById('status');
+        const connectBtn = document.getElementById('connect');
+        const disconnectBtn = document.getElementById('disconnect');
+        const clearBtn = document.getElementById('clear');
+        const logEl = document.getElementById('log');
+        
+        // Variables
+        let echo = null;
+        
+        // Functions
+        function log(message, data = null) {
+            const timestamp = new Date().toISOString();
+            let entry = `[${timestamp}] ${message}`;
+            
+            if (data) {
+                entry += '\n' + JSON.stringify(data, null, 2);
+            }
+            
+            logEl.textContent = entry + '\n\n' + logEl.textContent;
+        }
+        
+        function setStatus(status) {
+            statusEl.textContent = status;
+            statusEl.className = 'status ' + status.toLowerCase();
+            
+            if (status === 'Connected') {
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+            } else {
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+            }
+        }
+        
+        // Event Listeners
+        connectBtn.addEventListener('click', () => {
+            try {
+                log('Initializing Laravel Echo...');
+                
+                // Initialize Laravel Echo exactly as in the Laravel docs
+                window.Echo = new Echo({
+                    broadcaster: 'reverb',
+                    key: 'bts_guru_app_key',
+                    wsHost: window.location.hostname,
+                    wsPort: 8080,
+                    forceTLS: false,
+                    disableStats: true,
+                    enabledTransports: ['ws', 'wss']
+                });
+                
+                echo = window.Echo;
+                
+                log('Echo initialized with config:', {
+                    broadcaster: 'reverb',
+                    key: 'bts_guru_app_key',
+                    wsHost: window.location.hostname,
+                    wsPort: 8080
+                });
+                
+                // Handle connection status
+                echo.connector.socket.on('open', () => {
+                    setStatus('Connected');
+                    log('Connected to WebSocket server');
+                    
+                    // Subscribe to the channel
+                    log('Subscribing to sports.live.afl channel');
+                    subscribeToChannel();
+                });
+                
+                echo.connector.socket.on('close', () => {
+                    setStatus('Disconnected');
+                    log('Disconnected from WebSocket server');
+                });
+                
+                echo.connector.socket.on('error', (error) => {
+                    setStatus('Error');
+                    log('WebSocket error', { message: error.message });
+                });
+                
+            } catch (error) {
+                log('Error initializing Echo', { error: error.message });
+                setStatus('Error');
+            }
+        });
+        
+        function subscribeToChannel() {
+            // Subscribe to the channel
+            const channel = echo.channel('sports.live.afl');
+            
+            // Listen for the specific event
+            channel.listen('.afl.update', (data) => {
+                log('Received .afl.update event', data);
+            });
+            
+            // Also listen without the dot prefix (some Laravel versions use this)
+            channel.listen('afl.update', (data) => {
+                log('Received afl.update event', data);
+            });
+            
+            log('Successfully subscribed to sports.live.afl channel');
+        }
+        
+        disconnectBtn.addEventListener('click', () => {
+            if (echo) {
+                echo.disconnect();
+                window.Echo = null;
+                echo = null;
+                setStatus('Disconnected');
+                log('Manually disconnected');
+            }
+        });
+        
+        clearBtn.addEventListener('click', () => {
+            logEl.textContent = '// Events will appear here';
+        });
+    </script>
+</body>
+</html>

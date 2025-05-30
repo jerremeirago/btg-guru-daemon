@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple WebSocket Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.3.0/dist/web/pusher.min.js"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .card {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        pre {
+            background: #f1f1f1;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .connected { background: #d4edda; color: #155724; }
+        .disconnected { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Simple WebSocket Test</h1>
+    
+    <div class="card">
+        <h2>Connection: <span id="status" class="status disconnected">Disconnected</span></h2>
+        <div>
+            <button id="connect">Connect</button>
+            <button id="disconnect" disabled>Disconnect</button>
+            <button id="clear">Clear Log</button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>Event Log</h2>
+        <pre id="log">// Events will appear here</pre>
+    </div>
+    
+    <script>
+        // DOM Elements
+        const statusEl = document.getElementById('status');
+        const connectBtn = document.getElementById('connect');
+        const disconnectBtn = document.getElementById('disconnect');
+        const clearBtn = document.getElementById('clear');
+        const logEl = document.getElementById('log');
+        
+        // Variables
+        let pusher = null;
+        
+        // Functions
+        function log(message, data = null) {
+            const timestamp = new Date().toISOString();
+            let entry = `[${timestamp}] ${message}`;
+            
+            if (data) {
+                entry += '\n' + JSON.stringify(data, null, 2);
+            }
+            
+            logEl.textContent = entry + '\n\n' + logEl.textContent;
+        }
+        
+        function setStatus(status) {
+            statusEl.textContent = status;
+            statusEl.className = 'status ' + status.toLowerCase();
+            
+            if (status === 'Connected') {
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+            } else {
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+            }
+        }
+        
+        // Event Listeners
+        connectBtn.addEventListener('click', () => {
+            try {
+                log('Connecting to WebSocket server...');
+                
+                // Initialize Pusher
+                pusher = new Pusher('bts_guru_app_key', {
+                    wsHost: window.location.hostname,
+                    wsPort: 8080,
+                    enabledTransports: ['ws', 'wss'],
+                    disableStats: true,
+                    forceTLS: false,
+                    cluster: 'mt1',
+                    encrypted: false
+                });
+                
+                log('Pusher initialized with config:', {
+                    key: 'bts_guru_app_key',
+                    wsHost: window.location.hostname,
+                    wsPort: 8080,
+                    forceTLS: false
+                });
+                
+                // Connection events
+                pusher.connection.bind('connected', () => {
+                    setStatus('Connected');
+                    log('Connected to WebSocket server');
+                    
+                    // Subscribe to channel
+                    log('Subscribing to sports.live.afl channel');
+                    const channel = pusher.subscribe('sports.live.afl');
+                    
+                    // Listen for events
+                    channel.bind_global((event, data) => {
+                        if (!event.startsWith('pusher:')) {
+                            log(`Event received: ${event}`, data);
+                        }
+                    });
+                    
+                    // Specific event listeners
+                    channel.bind('afl.update', (data) => {
+                        log('AFL Update event received', data);
+                    });
+                });
+                
+                pusher.connection.bind('error', (err) => {
+                    setStatus('Error');
+                    log('Connection error', err);
+                });
+                
+                pusher.connection.bind('disconnected', () => {
+                    setStatus('Disconnected');
+                    log('Disconnected from WebSocket server');
+                });
+                
+                // Debug all messages
+                pusher.connection.bind('message', (msg) => {
+                    if (msg && msg.data) {
+                        try {
+                            const data = JSON.parse(msg.data);
+                            if (data.event && !data.event.startsWith('pusher:')) {
+                                log('Raw message received', data);
+                            }
+                        } catch (e) {
+                            // Ignore parsing errors
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                log('Error initializing Pusher', { error: error.message });
+                setStatus('Error');
+            }
+        });
+        
+        disconnectBtn.addEventListener('click', () => {
+            if (pusher) {
+                pusher.disconnect();
+                pusher = null;
+                setStatus('Disconnected');
+                log('Manually disconnected');
+            }
+        });
+        
+        clearBtn.addEventListener('click', () => {
+            logEl.textContent = '// Events will appear here';
+        });
+    </script>
+</body>
+</html>
