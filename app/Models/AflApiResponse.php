@@ -13,7 +13,9 @@ class AflApiResponse extends Model
 
     protected $fillable = [
         'uri',
-        'response'
+        'response',
+        'response_code',
+        'response_time'
     ];
 
     protected $casts = [

@@ -35,7 +35,12 @@ class FetchAflLiveDataCommand extends Command
     {
         $this->info('Fetching AFL data from GoalServe API...');
 
+        // get the starting time in seconds
+        $startTime = microtime(true);
         $data = $this->service->getData();
+        $endTime = microtime(true);
+        $responseTime = $endTime - $startTime;
+
         $uri = $data['uri'];
 
         if (empty($data['response'])) {
@@ -52,11 +57,19 @@ class FetchAflLiveDataCommand extends Command
             'uri' => $uri,
         ], [
             'response' => $response,
+            'response_code' => $data['response_code'],
+            'response_time' => round($responseTime),
         ]);
 
         // Broadcast the new update
         event(new AflDataUpdate($latestData));
         $this->info('Event broadcast successfully');
+        // show the details like the uri, response code, and response duration
+        $this->info('Event Summary');
+        $this->info('URI: ' . $uri);
+        $this->info('Response Code: HTTP/2 ' . $data['response_code']);
+        $this->info('API call took: ' . round($responseTime) . ' seconds');
+
 
         return Command::SUCCESS;
     }

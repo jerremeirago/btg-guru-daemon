@@ -62,6 +62,9 @@ class AflDataUpdate implements ShouldBroadcast
             'data_available' => true,
             'data_size' => is_array($this->aflData->response) ? count($this->aflData->response) : 'unknown',
             'updated_at' => $this->aflData->updated_at->toIso8601String(),
+            'api_call_time' => $this->aflData->response_time,
+            'response_code' => $this->aflData->response_code,
+            'fetch' => config('app.url') . '/api/v1/live/afl'
             // Include a small sample of the data if possible
             // 'data_preview' => $this->getDataPreview($this->aflData->response),
         ];

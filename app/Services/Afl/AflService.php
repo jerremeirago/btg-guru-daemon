@@ -22,7 +22,7 @@ class AflService
      */
     public function getData(): array
     {
-        $uri = '/afl/home';
+        $uri = '/afl/home?json=1';
         if (!$this->api instanceof ApiInterface) {
             return [];
         }
@@ -30,6 +30,7 @@ class AflService
         $response = $this->api->get()->uri($uri)->send();
 
         return [
+            'response_code' => $response->getResponse()->getStatusCode(),
             'response' => $response->getResponse()->json(),
             'uri' => $uri
         ];

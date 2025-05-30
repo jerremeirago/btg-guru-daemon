@@ -99,6 +99,6 @@ final class ApiDriverHandler implements ApiInterface
             $url .= '?' . http_build_query($payload);
         }
 
-        return $url . $this->uri . '?json=1';
+        return $url . $this->uri;
     }
 }
