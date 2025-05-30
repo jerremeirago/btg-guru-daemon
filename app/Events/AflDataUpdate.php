@@ -64,6 +64,7 @@ class AflDataUpdate implements ShouldBroadcast
             'updated_at' => $this->aflData->updated_at->toIso8601String(),
             'api_call_time' => $this->aflData->response_time,
             'response_code' => $this->aflData->response_code,
+            'request_id' => $this->aflData->request_id,
             'fetch' => config('app.url') . '/api/v1/live/afl'
             // Include a small sample of the data if possible
             // 'data_preview' => $this->getDataPreview($this->aflData->response),

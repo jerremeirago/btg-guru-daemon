@@ -120,7 +120,7 @@
                 
                 // Initialize Laravel Echo exactly as in the Laravel docs
                 window.Echo = new Echo({
-                    broadcaster: 'reverb',
+                    broadcaster: 'pusher',
                     key: 'bts_guru_app_key',
                     wsHost: window.location.hostname,
                     wsPort: 8080,

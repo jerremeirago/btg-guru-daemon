@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BTS Guru WebSocket Test - Laravel Echo</title>
+    <title>BTS Guru WebSocket Test - BTSGuruClient</title>
+    <!-- Required dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.3.0/dist/web/pusher.min.js"></script>
+    <!-- BTS Guru Client -->
+    <script src="/js/bts-client.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -84,7 +87,7 @@
         const logEl = document.getElementById('log');
         
         // Variables
-        let echo = null;
+        let btsClient = null;
         
         // Helper Functions
         function setStatus(status) {
@@ -122,110 +125,55 @@
             setStatus('Connecting');
             log('Connecting to WebSocket server...');
             
-            try {
-                log('Echo configuration:', {
-                    broadcaster: 'pusher',
+            // Initialize BTSGuruClient if not already done
+            if (!btsClient) {
+                btsClient = new BTSGuruClient({
+                    host: window.location.hostname,
+                    port: 8080,
                     key: 'bts_guru_app_key',
-                    wsHost: window.location.hostname,
-                    wsPort: 8080,
-                    forceTLS: false,
-                    cluster: 'mt1',
-                    encrypted: false
+                    debug: true,
+                    onConnect: () => {
+                        setStatus('Connected');
+                        log('Connected to WebSocket server');
+                        
+                        // Subscribe to the AFL channel
+                        log('Subscribing to sports.live.afl channel...');
+                        
+                        btsClient.subscribe('sports.live.afl', {
+                            onUpdate: (data) => {
+                                log('Received AFL update notification', data);
+                            },
+                            onDataReceived: (data, metadata) => {
+                                log('Received full AFL data', data);
+                            }
+                        });
+                        
+                        testBroadcastBtn.disabled = false;
+                    },
+                    onDisconnect: () => {
+                        setStatus('Disconnected');
+                        log('Disconnected from WebSocket server');
+                        testBroadcastBtn.disabled = true;
+                    },
+                    onError: (error) => {
+                        setStatus('Error');
+                        log('Connection error', error);
+                        testBroadcastBtn.disabled = true;
+                    }
                 });
-                
-                // Initialize Laravel Echo
-                window.Echo = new Echo({
-                    broadcaster: 'pusher',
-                    key: 'bts_guru_app_key',
-                    wsHost: window.location.hostname,
-                    wsPort: 8080,
-                    forceTLS: false,
-                    disableStats: true,
-                    encrypted: false,
-                    cluster: 'mt1',
-                    enabledTransports: ['ws', 'wss']
-                });
-                
-                log('Echo initialized successfully');
-            } catch (error) {
-                log('Error initializing Echo', { error: error.message });
-                setStatus('Error');
-                return;
             }
             
-            echo = window.Echo;
-            
-            // Listen for connection status
-            echo.connector.pusher.connection.bind('connected', () => {
-                setStatus('Connected');
-                log('Connected to WebSocket server');
-                
-                // Subscribe to the AFL channel
-                log('Subscribing to sports.live.afl channel...');
-                
-                // Create a channel subscription
-                const channel = echo.channel('sports.live.afl');
-                log('Successfully subscribed to channel: sports.live.afl');
-                
-                // Listen for all events on this channel
-                echo.connector.pusher.bind_global((eventName, data) => {
-                    if (!eventName.startsWith('pusher:')) {
-                        log(`Global event received: ${eventName}`, data);
-                    }
+            // Connect to WebSocket server
+            btsClient.connect()
+                .catch(error => {
+                    log('Failed to connect', error);
+                    setStatus('Error');
                 });
-                
-                // Listen for specific event patterns
-                channel.listen('.afl.update', (data) => {
-                    log('Received .afl.update event', data);
-                });
-                
-                channel.listen('afl.update', (data) => {
-                    log('Received afl.update event', data);
-                });
-                
-                // Listen for App\Events\AflDataUpdate event
-                channel.listen('App\\Events\\AflDataUpdate', (data) => {
-                    log('Received App\\Events\\AflDataUpdate event', data);
-                });
-                
-                // Listen for any event on this channel
-                channel.listenToAll((eventName, data) => {
-                    log(`Channel event received: ${eventName}`, data);
-                });
-                
-                // Add raw socket message listener
-                echo.connector.pusher.connection.bind('message', (payload) => {
-                    try {
-                        if (typeof payload.data === 'string') {
-                            const message = JSON.parse(payload.data);
-                            if (message.event && !message.event.startsWith('pusher')) {
-                                log(`Raw socket message: ${message.event}`, message);
-                            }
-                        } else {
-                            log('Non-string payload received', payload);
-                        }
-                    } catch (e) {
-                        // Don't log parsing errors anymore
-                    }
-                });
-            });
-            
-            echo.connector.pusher.connection.bind('error', (err) => {
-                setStatus('Error');
-                log('Connection error', err);
-            });
-            
-            echo.connector.pusher.connection.bind('disconnected', () => {
-                setStatus('Disconnected');
-                log('Disconnected from WebSocket server');
-            });
         });
         
         disconnectBtn.addEventListener('click', () => {
-            if (echo) {
-                echo.disconnect();
-                echo = null;
-                window.Echo = null;
+            if (btsClient) {
+                btsClient.disconnect();
                 setStatus('Disconnected');
                 log('Manually disconnected from WebSocket server');
             }
@@ -254,6 +202,11 @@
             .catch(error => {
                 log('Error requesting test broadcast', { error: error.message });
             });
+        });
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            log('Page loaded. Click Connect to start WebSocket connection.');
         });
     </script>
 </body>

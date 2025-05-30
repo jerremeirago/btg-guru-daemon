@@ -6,6 +6,7 @@ use App\Services\Afl\AflService;
 use Illuminate\Console\Command;
 use App\Models\AflApiResponse;
 use App\Events\AflDataUpdate;
+use Illuminate\Support\Str;
 
 class FetchAflLiveDataCommand extends Command
 {
@@ -59,6 +60,7 @@ class FetchAflLiveDataCommand extends Command
             'response' => $response,
             'response_code' => $data['response_code'],
             'response_time' => round($responseTime),
+            'request_id' => Str::uuid(),
         ]);
 
         // Broadcast the new update

@@ -15,7 +15,8 @@ class AflApiResponse extends Model
         'uri',
         'response',
         'response_code',
-        'response_time'
+        'response_time',
+        'request_id',
     ];
 
     protected $casts = [
