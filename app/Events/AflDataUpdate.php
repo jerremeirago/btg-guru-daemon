@@ -59,7 +59,7 @@ class AflDataUpdate implements ShouldBroadcast
         return [
             'id' => $this->aflData->id,
             'uri' => $this->aflData->uri,
-            'data_available' => true,
+            'data_available' => $this->aflData->response_code === 200,
             'data_size' => is_array($this->aflData->response) ? count($this->aflData->response) : 'unknown',
             'updated_at' => $this->aflData->updated_at->toIso8601String(),
             'api_call_time' => $this->aflData->response_time,

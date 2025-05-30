@@ -20,7 +20,9 @@ class AflApiResponse extends Model
     ];
 
     protected $casts = [
-        'response' => 'array'
+        'response' => 'array',
+        'response_code' => 'integer',
+        'response_time' => 'integer',
     ];
 
     public function scopeGetLatestData($query)
