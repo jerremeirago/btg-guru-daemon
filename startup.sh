@@ -39,17 +39,18 @@ sleep 2
 
 # Start Queue Worker
 start_service "queue" "php artisan queue:work --queue=default,broadcasts --tries=3"
+start_service "queue" "php artisan queue:listen"
 
 # Wait a moment for Queue to initialize
 sleep 2
 
 # Run the AFL data fetcher once
 echo -e "${YELLOW}Fetching initial AFL data...${NC}"
-php artisan api:afl
+php artisan api:afl --recurring
 echo -e "${GREEN}Initial AFL data fetch completed${NC}"
 
 # Set up a cron-like job to fetch AFL data every minute
-start_service "afl_fetcher" "watch -n 60 php artisan api:afl"
+start_service "afl_fetcher" "watch -n 60 php artisan api:afl --recurring"
 
 echo -e "${BLUE}All services started successfully!${NC}"
 echo -e "${YELLOW}To view logs:${NC}"
