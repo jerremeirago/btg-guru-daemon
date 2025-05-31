@@ -7,6 +7,7 @@ use Illuminate\Console\Command;
 use App\Models\AflApiResponse;
 use App\Events\AflDataUpdate;
 use Illuminate\Support\Str;
+use App\Jobs\AflLiveDataSyncJob;
 
 class FetchAflLiveDataCommand extends Command
 {
@@ -15,7 +16,7 @@ class FetchAflLiveDataCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'api:afl';
+    protected $signature = 'api:afl {--recurring : Run the command in recurring mode using queue}';
 
     /**
      * The command description.
@@ -32,7 +33,16 @@ class FetchAflLiveDataCommand extends Command
         parent::__construct();
     }
 
-    public function handle(): int
+    public function handle()
+    {
+        if ($this->option('recurring')) {
+            return $this->handleRecurring();
+        }
+
+        return $this->once();
+    }
+
+    public function once(): int
     {
         $this->info('Fetching AFL data from GoalServe API...');
 
@@ -74,5 +84,29 @@ class FetchAflLiveDataCommand extends Command
 
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * Execute the command in recurring mode using queue.
+     *
+     * @return void
+     */
+    private function handleRecurring()
+    {
+        $this->info('Starting AFL data sync in recurring mode (every 15 seconds)...');
+
+        // Dispatch the job to run immediately
+        AflLiveDataSyncJob::dispatch();
+
+        $this->info('Job dispatched successfully. Check logs for results.');
+        $this->info('You can monitor the job in Laravel Horizon dashboard.');
+        $this->info('Press Ctrl+C to stop this command, but the job will continue running in the background.');
+
+        // Keep the command running to show that it's active
+        while (true) {
+            sleep(1);
+        }
+
+        return self::SUCCESS;
     }
 }
