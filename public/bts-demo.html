@@ -124,6 +124,40 @@
             font-size: 14px;
         }
         
+        .config-panel {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .config-group {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .config-group label {
+            min-width: 150px;
+            margin-right: 10px;
+        }
+        
+        .config-group input[type="text"],
+        .config-group input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 250px;
+        }
+        
+        details summary {
+            cursor: pointer;
+            padding: 8px 0;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
@@ -144,6 +178,33 @@
     <div class="card full-width">
         <h1>BTS Guru WebSocket Demo</h1>
         <p>This demo shows how to use the BTS Guru WebSocket client to receive real-time sports data updates.</p>
+        <details>
+            <summary>Configuration Settings</summary>
+            <div class="config-panel">
+                <div class="config-group">
+                    <label for="config-host">WebSocket Host:</label>
+                    <input type="text" id="config-host" value="" placeholder="Default: current hostname">
+                </div>
+                <div class="config-group">
+                    <label for="config-port">WebSocket Port:</label>
+                    <input type="number" id="config-port" value="8080">
+                </div>
+                <div class="config-group">
+                    <label for="config-key">App Key:</label>
+                    <input type="text" id="config-key" value="bts_guru_app_key">
+                </div>
+                <div class="config-group">
+                    <label for="config-debug">
+                        <input type="checkbox" id="config-debug" checked>
+                        Enable Debug Logging
+                    </label>
+                </div>
+                <div class="config-group">
+                    <button id="apply-config">Apply Configuration</button>
+                    <button id="reset-config">Reset to Defaults</button>
+                </div>
+            </div>
+        </details>
     </div>
     
     <div class="container">
@@ -214,15 +275,37 @@
         const fullDataEl = document.getElementById('full-data-content');
         const dataTabs = document.querySelectorAll('.data-tab');
         
+        // Configuration Elements
+        const configHostEl = document.getElementById('config-host');
+        const configPortEl = document.getElementById('config-port');
+        const configKeyEl = document.getElementById('config-key');
+        const configDebugEl = document.getElementById('config-debug');
+        const applyConfigBtn = document.getElementById('apply-config');
+        const resetConfigBtn = document.getElementById('reset-config');
+        
         // Variables
         let btsClient = null;
         let lastReceivedData = null;
         let fullData = null;
         
+        // Default configuration
+        const defaultConfig = {
+            host: window.location.hostname,
+            port: 8080,
+            key: 'bts_guru_app_key',
+            debug: true
+        };
+        
+        // Current configuration
+        let currentConfig = { ...defaultConfig };
+        
         // Initialize BTS Client
         function initClient() {
             btsClient = new BTSGuruClient({
-                debug: true,
+                host: currentConfig.host,
+                port: currentConfig.port,
+                key: currentConfig.key,
+                debug: currentConfig.debug,
                 onConnect: () => {
                     setStatus('Connected');
                     connectBtn.disabled = true;
@@ -305,6 +388,54 @@
             });
         });
         
+        // Configuration Functions
+        function updateConfigDisplay() {
+            configHostEl.value = currentConfig.host || '';
+            configPortEl.value = currentConfig.port;
+            configKeyEl.value = currentConfig.key;
+            configDebugEl.checked = currentConfig.debug;
+        }
+        
+        function applyConfig() {
+            // Get values from form
+            const host = configHostEl.value.trim() || window.location.hostname;
+            const port = parseInt(configPortEl.value) || 8080;
+            const key = configKeyEl.value.trim() || 'bts_guru_app_key';
+            const debug = configDebugEl.checked;
+            
+            // Update current configuration
+            currentConfig = { host, port, key, debug };
+            
+            // Log the change
+            log('Configuration updated', currentConfig);
+            
+            // If client exists and is connected, disconnect it
+            if (btsClient && btsClient.isConnected) {
+                btsClient.disconnect();
+                btsClient = null;
+                log('Disconnected due to configuration change');
+            }
+            
+            // Initialize client with new configuration
+            initClient();
+        }
+        
+        function resetConfig() {
+            currentConfig = { ...defaultConfig };
+            updateConfigDisplay();
+            log('Configuration reset to defaults');
+            
+            // If client exists and is connected, disconnect it
+            if (btsClient && btsClient.isConnected) {
+                btsClient.disconnect();
+                btsClient = null;
+                log('Disconnected due to configuration reset');
+            }
+            
+            // Initialize client with default configuration
+            initClient();
+        }
+        
         // Event Listeners
         connectBtn.addEventListener('click', () => {
             if (!btsClient) {
@@ -312,7 +443,11 @@
             }
             
             setStatus('Connecting');
-            log('Connecting to WebSocket server...');
+            log('Connecting to WebSocket server...', {
+                host: currentConfig.host,
+                port: currentConfig.port,
+                key: currentConfig.key
+            });
             
             btsClient.connect()
                 .catch(error => {
@@ -375,8 +510,13 @@
             unsubscribeAflBtn.disabled = true;
         });
         
+        // Configuration event listeners
+        applyConfigBtn.addEventListener('click', applyConfig);
+        resetConfigBtn.addEventListener('click', resetConfig);
+        
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
+            updateConfigDisplay();
             initClient();
         });
     </script>
