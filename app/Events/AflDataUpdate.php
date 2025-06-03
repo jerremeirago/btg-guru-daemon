@@ -8,6 +8,7 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use App\Services\Afl\AflService;
 
 class AflDataUpdate implements ShouldBroadcast
 {
@@ -20,12 +21,15 @@ class AflDataUpdate implements ShouldBroadcast
      */
     public $aflData;
 
+    public AflService $aflService;
+
     /**
      * Create a new event instance.
      */
-    public function __construct(AflApiResponse $aflData)
+    public function __construct(AflApiResponse $aflData, AflService $aflService)
     {
         $this->aflData = $aflData;
+        $this->aflService = $aflService;
     }
 
     /**
@@ -55,7 +59,8 @@ class AflDataUpdate implements ShouldBroadcast
      */
     public function broadcastWith(): array
     {
-        // Instead of sending the full data, send a reference and metadata
+        $scoreboard = $this->aflService->getScoreboard();
+
         return [
             'id' => $this->aflData->id,
             'uri' => $this->aflData->uri,
@@ -65,42 +70,8 @@ class AflDataUpdate implements ShouldBroadcast
             'api_call_time' => $this->aflData->response_time,
             'response_code' => $this->aflData->response_code,
             'request_id' => $this->aflData->request_id,
-            'fetch' => config('app.url') . '/api/v1/live/afl'
-            // Include a small sample of the data if possible
-            // 'data_preview' => $this->getDataPreview($this->aflData->response),
+            'fetch' => config('app.url') . '/api/v1/live/afl',
+            'scoreboard' => $scoreboard
         ];
-    }
-
-    /**
-     * Get a preview of the data (first few items)
-     *
-     * @param array|null $data
-     * @return array|null
-     */
-    protected function getDataPreview($data)
-    {
-        if (!is_array($data)) {
-            return null;
-        }
-
-        // Take just the first item or a few keys as a preview
-        if (isset($data[0]) && is_array($data[0])) {
-            // It's a numeric array, take first item
-            return array_slice($data, 0, 1);
-        } elseif (is_array($data)) {
-            // It's an associative array, take a few important keys
-            $preview = [];
-            $keysToInclude = ['id', 'name', 'title', 'type', 'status'];
-
-            foreach ($keysToInclude as $key) {
-                if (isset($data[$key])) {
-                    $preview[$key] = $data[$key];
-                }
-            }
-
-            return $preview ?: array_slice($data, 0, 3); // Take first 3 keys if no important keys found
-        }
-
-        return null;
     }
 }

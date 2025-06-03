@@ -30,6 +30,7 @@ class AflApiResponse extends Model
 
     protected static function booted(): void
     {
+        // @TODO: Update the values here (see helper funuctions)
         static::creating(function (AflApiResponse $model) {
             $model->round = 12;
             $model->match_date = '29.05.2025';

@@ -74,7 +74,7 @@ class FetchAflLiveDataCommand extends Command
         ]);
 
         // Broadcast the new update
-        event(new AflDataUpdate($latestData));
+        event(new AflDataUpdate($latestData, $this->service));
         $this->info('Event broadcast successfully');
         // show the details like the uri, response code, and response duration
         $this->info('Event Summary');
