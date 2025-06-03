@@ -10,16 +10,16 @@ use Illuminate\Support\Facades\Route;
 // WebSocket test endpoint
 Route::post('/test-broadcast', function () {
     $latestData = AflApiResponse::query()->orderBy('updated_at', 'desc')->first();
-    
+
     if (!$latestData) {
         return response()->json([
             'status' => 'error',
             'message' => 'No AFL data found to broadcast'
         ], 404);
     }
-    
+
     event(new AflDataUpdate($latestData));
-    
+
     return response()->json([
         'status' => 'success',
         'message' => 'Test broadcast sent',
@@ -39,8 +39,12 @@ Route::prefix('v1')->group(function () {
     // Auth routes
     Route::post('/login', [AuthController::class, 'login']);
 
+    // @TODO: Add a possibility to add a round here
     Route::get('/live/afl', [AflController::class, 'index']);
-Route::get('/live/afl/{id}', [AflController::class, 'show']);
+    Route::get('/live/afl/scoreboard/{round?}', [AflController::class, 'scoreboard']);
+    Route::get('/live/afl/match/h2h', [AflController::class, 'headToHead']);
+    Route::get('/live/afl/match/summary', [AflController::class, 'summary']);
+    // Route::get('/live/afl/{id}', [AflController::class, 'show']);
 
     // Protected routes (require authentication)
     Route::middleware('auth:sanctum')->group(function () {

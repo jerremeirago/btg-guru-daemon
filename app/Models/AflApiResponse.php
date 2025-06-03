@@ -17,13 +17,29 @@ class AflApiResponse extends Model
         'response_code',
         'response_time',
         'request_id',
+        'round',
+        'match_date',
     ];
 
     protected $casts = [
         'response' => 'array',
         'response_code' => 'integer',
         'response_time' => 'integer',
+        'round' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (AflApiResponse $model) {
+            $model->round = 12;
+            $model->match_date = '29.05.2025';
+        });
+
+        static::updating(function (AflApiResponse $model) {
+            $model->round = 12;
+            $model->match_date = '29.05.2025';
+        });
+    }
 
     public function scopeGetLatestData($query)
     {

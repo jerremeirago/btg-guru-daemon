@@ -26,4 +26,19 @@ class AflController extends Controller
 
         return response()->json($aflData->response);
     }
+
+    public function scoreboard()
+    {
+        return $this->aflService->getScoreboard();
+    }
+
+    public function headToHead()
+    {
+        return $this->aflService->getHeadToHead();
+    }
+
+    public function summary()
+    {
+        return $this->aflService->getMatchSummary();
+    }
 }

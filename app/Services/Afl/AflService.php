@@ -5,14 +5,19 @@ namespace App\Services\Afl;
 use App\Services\ApiDriverHandler;
 use App\Services\Facade\ApiInterface;
 use App\Services\ApiDrivers\GoalServeApiDriver;
+use App\Services\Afl\Utils\Analyzer;
+use App\Models\AflApiResponse;
 
 class AflService
 {
     private $api;
 
-    public function __construct(GoalServeApiDriver $driver)
-    {
+    public function __construct(
+        GoalServeApiDriver $driver,
+        private Analyzer $analyzer
+    ) {
         $this->api = new ApiDriverHandler($driver);
+        $this->hydrate();
     }
 
     /**
@@ -34,5 +39,27 @@ class AflService
             'response' => $response->getResponse()->json(),
             'uri' => $uri
         ];
+    }
+
+    private function hydrate()
+    {
+
+        $this->analyzer->hydrate(AflApiResponse::getLatestData()->response);
+    }
+
+
+    public function getScoreboard()
+    {
+        return $this->analyzer->getTeamScores();
+    }
+
+    public function getHeadToHead()
+    {
+        return $this->analyzer->getallheadtoheadrecords();
+    }
+
+    public function getMatchSummary()
+    {
+        return $this->analyzer->getMatchSummary();
     }
 }

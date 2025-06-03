@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Services\Afl\AflService;
+use App\Services\Afl\Utils\Analyzer;
 
 class ApiServiceProvider extends ServiceProvider
 {
@@ -15,6 +16,7 @@ class ApiServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(AflService::class);
+        $this->app->singleton(Analyzer::class);
     }
 
     /**
