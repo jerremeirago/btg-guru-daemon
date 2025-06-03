@@ -1,6 +1,10 @@
 [x] - Implement GoalServe API
 [x] - Refactor how API is being coded in the app, it should have an API Interface that would unify all API calls
 [x] - Add API configuration 
+[ ] - Access schedules api and save it in the database
+[ ] - if there is not match today, return the data schedules (as the scoreboard)
+[ ] - setup a job that will the standings every 12 hour (https://www.goalserve.com/getfeed/9645f122eef946c1c7bd08dd5ac0e712/afl/standings) 
+
 
 
 Raw Data
@@ -33,3 +37,4 @@ https://www.goalserve.com/getfeed/9645f122eef946c1c7bd08dd5ac0e712/getodds/socce
 https://beatingthespreadguru.com/afl
 https://beatingthespreadguru.com/afl/scores
 https://beatingthespreadguru.com/afl/matchcast_box/10457/12
+

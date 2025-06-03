@@ -37,6 +37,11 @@ class AflController extends Controller
         return $this->aflService->getHeadToHead();
     }
 
+    public function teams()
+    {
+        return $this->aflService->getTeams();
+    }
+
     public function summary()
     {
         return $this->aflService->getMatchSummary();
