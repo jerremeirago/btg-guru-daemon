@@ -111,3 +111,8 @@ if (!function_exists('has_match_today')) {
         return $today->isBetween($roundStart, $roundEnd);
     }
 }
+
+function isDevMode(): bool
+{
+    return app()->isLocal() || app()->isStaging();
+}

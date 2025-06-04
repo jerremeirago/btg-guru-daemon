@@ -93,7 +93,7 @@ class FetchAflLiveDataCommand extends Command
      */
     private function handleRecurring()
     {
-        $this->info('Starting AFL data sync in recurring mode (every 15 seconds)...');
+        $this->info('Starting AFL data sync in recurring mode...');
 
         // Dispatch the job to run immediately
         AflLiveDataSyncJob::dispatch();
