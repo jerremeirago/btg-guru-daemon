@@ -5,25 +5,25 @@ namespace App\Console\Commands;
 use App\Services\Afl\AflService;
 use Illuminate\Console\Command;
 use App\Models\AflApiResponse;
-use App\Events\AflDataUpdate;
 use Illuminate\Support\Str;
-use App\Jobs\AflLiveDataSyncJob;
+use App\Models\Types\AflRequestType;
+use App\Jobs\AflStandingSyncJob;
 
-class FetchAflLiveDataCommand extends Command
+class FetchAflStandingsCommand extends Command
 {
     /**
      * The name and signature of the command.
      *
      * @var string
      */
-    protected $signature = 'api:afl {--recurring : Run the command in recurring mode using queue}';
+    protected $signature = 'api:afl:standings {--recurring : Run the command in recurring mode using queue}';
 
     /**
      * The command description.
      *
      * @var string
      */
-    protected $description = 'Fetch AFL data from GoalServe API';
+    protected $description = 'Fetch AFL standings from GoalServe API';
 
     protected AflService $service;
 
@@ -44,37 +44,36 @@ class FetchAflLiveDataCommand extends Command
 
     public function once(): int
     {
-        $this->info('Fetching AFL data from GoalServe API...');
+        $this->info('Fetching AFL standings from GoalServe API...');
 
         // get the starting time in seconds
         $startTime = microtime(true);
-        $data = $this->service->getApiLiveData();
+        $data = $this->service->getApiStandings();
         $endTime = microtime(true);
         $responseTime = $endTime - $startTime;
 
         $uri = $data['uri'];
 
         if (empty($data['response'])) {
-            $this->error('Failed to fetch AFL data');
+            $this->error('Failed to fetch AFL standings');
             return Command::FAILURE;
         }
 
-        $this->info('Successfully fetched AFL data');
+        $this->info('Successfully fetched AFL standings');
         // Update database with the new content
         $response = $data['response'];
 
         // Create or update based on $uri
-        $latestData = AflApiResponse::updateOrCreate([
+        AflApiResponse::updateOrCreate([
             'uri' => $uri,
         ], [
             'response' => $response,
             'response_code' => $data['response_code'],
             'response_time' => round($responseTime),
             'request_id' => Str::uuid(),
+            'request_type' => AflRequestType::Standings->name,
         ]);
 
-        // Broadcast the new update
-        event(new AflDataUpdate($latestData, $this->service));
         $this->info('Event broadcast successfully');
         // show the details like the uri, response code, and response duration
         $this->info('Event Summary');
@@ -93,10 +92,11 @@ class FetchAflLiveDataCommand extends Command
      */
     private function handleRecurring()
     {
-        $this->info('Starting AFL data sync in recurring mode...');
+        $this->info('Starting AFL data sync in recurring mode (every 12 hours)...');
 
         // Dispatch the job to run immediately
-        AflLiveDataSyncJob::dispatch();
+        // @TODO: Replace this with its own job
+        AflStandingSyncJob::dispatch();
 
         $this->info('Job dispatched successfully. Check logs for results.');
         $this->info('You can monitor the job in Laravel Horizon dashboard.');

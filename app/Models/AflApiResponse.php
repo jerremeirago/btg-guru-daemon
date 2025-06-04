@@ -63,4 +63,9 @@ class AflApiResponse extends Model
     {
         return $this->scopeGetDataBy($query, self::URI_SCHEDULE, AflRequestType::Schedules->name);
     }
+
+    public function scopeGetLatestStandings($query)
+    {
+        return $this->scopeGetDataBy($query, self::URI_STANDINGS, AflRequestType::Standings->name);
+    }
 }

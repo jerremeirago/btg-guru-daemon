@@ -146,14 +146,16 @@ start_all_services() {
     # Wait for Reverb to be fully ready
     sleep 3
     
-    # Start queue listener
-    start_service "queue" "php artisan queue:listen"
     
     # Wait for queue to be ready
     sleep 2
     
     # Start AFL data fetching (this should be last as it may depend on the others)
     start_service "afl-data" "php artisan api:afl --recurring"
+    start_service "afl-standings" "php artisan api:afl:standing --recurring"
+
+    # Start queue listener
+    start_service "horizon" "php artisan horizon"
     
     log_message "All services startup sequence completed"
     log_message "You can monitor logs in: $LOG_DIR/"

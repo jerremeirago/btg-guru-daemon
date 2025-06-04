@@ -49,7 +49,7 @@ class FetchAflSchedulesCommand extends Command
 
         // get the starting time in seconds
         $startTime = microtime(true);
-        $data = $this->service->getSchedules();
+        $data = $this->service->getApiSchedules();
         $endTime = microtime(true);
         $responseTime = $endTime - $startTime;
 

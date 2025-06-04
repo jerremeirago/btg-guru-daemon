@@ -3,6 +3,7 @@
 namespace App\Services\Afl\Utils\Traits;
 
 use Illuminate\Support\Collection;
+use App\Models\AflApiResponse;
 
 trait TeamAnalysis
 {
@@ -533,5 +534,36 @@ trait TeamAnalysis
                 'better_margin' => $team1Stats['avg_margin'] > $team2Stats['avg_margin'] ? $team1 : $team2
             ]
         ];
+    }
+
+    public function getTeamStandings(): array
+    {
+        $standings = AflApiResponse::getLatestStandings();
+        $data = collect($standings->response['standings']['category']['team']);
+
+        foreach ($data as $team) {
+            $points_for = (int) $team['@points_for'];
+            $points_against = (int) $team['@points_against'];
+
+            // Calculate percentage, avoid division by zero
+            $percentage = ($points_against > 0) ? ($points_for / $points_against) * 100 : 0;
+            $teams[] = [
+                'name' => (string) $team['@name'],
+                'id' => (string) $team['@id'],
+                'position' => (int) $team['@pos'],
+                'games_played' => (int) $team['@gp'],
+                'wins' => (int) $team['@w'],
+                'draws' => (int) $team['@d'],
+                'losses' => (int) $team['@l'],
+                'points_for' => (int) $team['@points_for'],
+                'points_against' => (int) $team['@points_against'],
+                'points' => (int) $team['@pts'],
+                'recent_form' => (string) $team['@recent_form'],
+                'description' => (string) $team['description']['@value'],
+                'percentage' => round($percentage, 2),
+            ];
+        }
+
+        return $teams;
     }
 }

@@ -25,7 +25,7 @@ class AflService
      *
      * @return array<string, string<json>>
      */
-    public function getData(): array
+    public function getApiLiveData(): array
     {
         $uri = AflApiResponse::URI_LIVE;
         if (!$this->api instanceof ApiInterface) {
@@ -41,9 +41,26 @@ class AflService
         ];
     }
 
-    public function getSchedules(): array
+    public function getApiSchedules(): array
     {
         $uri = AflApiResponse::URI_SCHEDULE;
+
+        if (!$this->api instanceof ApiInterface) {
+            return [];
+        }
+
+        $response = $this->api->get()->uri($uri)->send();
+
+        return [
+            'response_code' => $response->getResponse()->getStatusCode(),
+            'response' => $response->getResponse()->json(),
+            'uri' => $uri
+        ];
+    }
+
+    public function getApiStandings(): array
+    {
+        $uri = AflApiResponse::URI_STANDINGS;
 
         if (!$this->api instanceof ApiInterface) {
             return [];
@@ -82,5 +99,10 @@ class AflService
     public function getMatchSummary()
     {
         return $this->analyzer->getMatchSummary();
+    }
+
+    public function getTeamStandings()
+    {
+        return $this->analyzer->getTeamStandings();
     }
 }

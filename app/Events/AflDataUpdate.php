@@ -60,6 +60,7 @@ class AflDataUpdate implements ShouldBroadcast
     public function broadcastWith(): array
     {
         $scoreboard = $this->aflService->getScoreboard();
+        $standings = $this->aflService->getTeamStandings();
 
         return [
             'has_match_today' => has_match_today(),
@@ -69,7 +70,8 @@ class AflDataUpdate implements ShouldBroadcast
             'response_code' => $this->aflData->response_code,
             'request_id' => $this->aflData->request_id,
             'fetch' => config('app.url') . '/api/v1/live/afl',
-            'scoreboard' => $scoreboard
+            'scoreboard' => $scoreboard,
+            'standings' => $standings
         ];
     }
 }
