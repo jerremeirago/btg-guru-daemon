@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('afl_api_responses', function (Blueprint $table) {
-            $table->string('request_type')->nullable()->after('response')->default(AflRequestType::Live->name);
+            $table->string('request_type')->nullable()->default(AflRequestType::Live->name);
         });       //
     }
 
