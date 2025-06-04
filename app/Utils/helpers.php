@@ -44,6 +44,7 @@ if (!function_exists('get_round_date')) {
 
         $nextRound = null;
         $nextRoundDiff = null;
+        $previousRound = null;
 
         foreach ($rounds as $key => $round) {
             $roundStart = Carbon::parse($round['start']);
@@ -64,9 +65,23 @@ if (!function_exists('get_round_date')) {
                     $nextRoundDiff = $diff;
                 }
             }
+
+            // Keep track of the previous round (where end date is before the current date)
+            if ($roundEnd->lt($date)) {
+                // Update previous round if we haven't set it yet or if this round ends later
+                if ($previousRound === null || Carbon::parse($previousRound['end'])->lt($roundEnd)) {
+                    $previousRound = $round;
+                }
+            }
         }
 
-        // Return the next upcoming round, or empty string if no future rounds
+        // If we're between rounds (after a round has ended but before the next one starts),
+        // return the previous round instead of the next one
+        if ($previousRound !== null) {
+            return $previousRound;
+        }
+
+        // Return the next upcoming round, or empty array if no future rounds
         return $nextRound !== null ? $nextRound : [];
     }
 }

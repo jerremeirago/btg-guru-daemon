@@ -68,6 +68,18 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
+        ],
+        "ssh-php": [
+            "Composer\\Config::disableProcessTimeout",
+            "docker compose exec app sh"
+        ],
+        "artisan": [
+            "Composer\\Config::disableProcessTimeout",
+            "docker compose exec app php artisan"
+        ],
+        "php-dump": [
+            "Composer\\Config::disableProcessTimeout",
+            "docker compose exec app composer dump"
         ]
     },
     "extra": {

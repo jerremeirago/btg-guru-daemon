@@ -9,12 +9,16 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-Route::get('/test', function () {
-    dump(
-        get_current_round(),
-        has_match_today(),
-    );
-    dd('testing');
+Route::get('/test', function (\App\Services\Afl\AflService $service) {
+    dump([
+        'get_current_round()' => get_current_round(),
+        'has_match_today()' => has_match_today(),
+        'scoreboard' => $service->getScoreboard()->toArray(),
+    ]);
+});
+
+Route::get('/test-schedule', function (\App\Services\Afl\Utils\Analyzer $analyzer) {
+    return $analyzer->getNextMatchSchedule();
 });
 
 Route::view('dashboard', 'dashboard')

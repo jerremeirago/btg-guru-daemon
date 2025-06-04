@@ -19,8 +19,8 @@ trait MatchAnalysis
             return [
                 'match_id' => $match['@id'],
                 'venue' => $match['@venue'],
-                'date' => has_match_today() ? $match['@date'] : \Carbon\Carbon::parse(get_current_round()['start'])->format('M d'),
-                'status' => has_match_today() ? $match['@status'] : \Carbon\Carbon::parse(get_current_round()['start'])->format('M d'),
+                'date' => $match['@date'],
+                'status' => $match['@status'],
                 'home_team' => $match['localteam']['@name'],
                 'home_score' => $homeScore,
                 'away_team' => $match['visitorteam']['@name'],

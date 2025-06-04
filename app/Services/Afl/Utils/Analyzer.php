@@ -7,12 +7,13 @@ use App\Services\Afl\Utils\Traits\{
     MatchAnalysis,
     PlayerAnalysis,
     TeamAnalysis,
-    EventAnalysis
+    EventAnalysis,
+    ScheduleAnalysis
 };
 
 class Analyzer
 {
-    use MatchAnalysis, PlayerAnalysis, TeamAnalysis, EventAnalysis;
+    use MatchAnalysis, PlayerAnalysis, TeamAnalysis, EventAnalysis, ScheduleAnalysis;
 
     protected Collection $matches;
     protected array $rawData;

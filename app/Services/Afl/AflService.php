@@ -27,7 +27,24 @@ class AflService
      */
     public function getData(): array
     {
-        $uri = '/afl/home?json=1';
+        $uri = AflApiResponse::URI_LIVE;
+        if (!$this->api instanceof ApiInterface) {
+            return [];
+        }
+
+        $response = $this->api->get()->uri($uri)->send();
+
+        return [
+            'response_code' => $response->getResponse()->getStatusCode(),
+            'response' => $response->getResponse()->json(),
+            'uri' => $uri
+        ];
+    }
+
+    public function getSchedules(): array
+    {
+        $uri = AflApiResponse::URI_SCHEDULE;
+
         if (!$this->api instanceof ApiInterface) {
             return [];
         }
@@ -50,6 +67,10 @@ class AflService
 
     public function getScoreboard()
     {
+        if (!has_match_today()) {
+            return $this->analyzer->getNextMatchSchedule();
+        }
+
         return $this->analyzer->getTeamScores();
     }
 

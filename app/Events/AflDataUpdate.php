@@ -62,10 +62,8 @@ class AflDataUpdate implements ShouldBroadcast
         $scoreboard = $this->aflService->getScoreboard();
 
         return [
-            'id' => $this->aflData->id,
-            'uri' => $this->aflData->uri,
+            'has_match_today' => has_match_today(),
             'data_available' => $this->aflData->response_code === 200,
-            'data_size' => is_array($this->aflData->response) ? count($this->aflData->response) : 'unknown',
             'updated_at' => $this->aflData->updated_at->toIso8601String(),
             'api_call_time' => $this->aflData->response_time,
             'response_code' => $this->aflData->response_code,

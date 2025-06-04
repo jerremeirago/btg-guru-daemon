@@ -4,12 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Types\AflRequestType;
 
 class AflApiResponse extends Model
 {
     use HasUuids;
 
     protected $table = 'afl_api_responses';
+
+    public const URI_LIVE = '/afl/home?json=1';
+    public const URI_SCHEDULE = '/afl/schedule?json=1';
+    public const URI_STANDINGS = '/afl/standings?json=1';
 
     protected $fillable = [
         'uri',
@@ -19,6 +24,7 @@ class AflApiResponse extends Model
         'request_id',
         'round',
         'match_date',
+        'request_type',
     ];
 
     protected $casts = [
@@ -28,22 +34,33 @@ class AflApiResponse extends Model
         'round' => 'integer',
     ];
 
-    protected static function booted(): void
+    protected static function booted()
     {
-        // @TODO: Update the values here (see helper funuctions)
-        static::creating(function (AflApiResponse $model) {
-            $model->round = 12;
-            $model->match_date = '29.05.2025';
+        static::creating(function ($model) {
+            $model->round = get_current_round()['round'];
+            $model->match_date = get_current_round()['start'];
         });
 
-        static::updating(function (AflApiResponse $model) {
-            $model->round = 12;
-            $model->match_date = '29.05.2025';
+        static::updating(function ($model) {
+            $model->round = get_current_round()['round'];
+            $model->match_date = get_current_round()['start'];
         });
+    }
+
+    public function scopeGetDataBy($query, string $uri, string $requestType)
+    {
+        return $query->where('uri', $uri)
+            ->where('request_type', $requestType)
+            ->orderBy('updated_at', 'desc')->first();
     }
 
     public function scopeGetLatestData($query)
     {
-        return $query->orderBy('updated_at', 'desc')->first();
+        return $this->scopeGetDataBy($query, self::URI_LIVE, AflRequestType::Live->name);
+    }
+
+    public function scopeGetLatestSchedule($query)
+    {
+        return $this->scopeGetDataBy($query, self::URI_SCHEDULE, AflRequestType::Schedules->name);
     }
 }
