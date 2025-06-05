@@ -51,7 +51,8 @@ class AflApiResponse extends Model
     {
         return $query->where('uri', $uri)
             ->where('request_type', $requestType)
-            ->orderBy('updated_at', 'desc')->first();
+            ->orderBy('updated_at', 'desc')
+            ->first();
     }
 
     public function scopeGetLatestData($query)

@@ -33,7 +33,7 @@ class AflLiveDataSyncJob implements ShouldQueue
      * @param int $retryAfterSeconds
      * @return void
      */
-    public function __construct(int $retryAfterSeconds = 15)
+    public function __construct(int $retryAfterSeconds = 5)
     {
         $this->retryAfterSeconds = $retryAfterSeconds;
     }
@@ -63,7 +63,9 @@ class AflLiveDataSyncJob implements ShouldQueue
             Log::error('Exception trace: ' . $e->getTraceAsString());
         }
 
+        $dispatchEvery = has_match_today() ? 2 : 60;
+
         // Re-dispatch the job to run again after the specified interval
-        self::dispatch()->delay(now()->addSeconds($this->retryAfterSeconds));
+        self::dispatch()->delay(now()->addSeconds($dispatchEvery));
     }
 }

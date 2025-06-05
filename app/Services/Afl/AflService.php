@@ -77,7 +77,6 @@ class AflService
 
     private function hydrate()
     {
-
         $this->analyzer->hydrate(AflApiResponse::getLatestData()->response);
     }
 

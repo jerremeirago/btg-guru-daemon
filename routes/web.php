@@ -14,6 +14,7 @@ Route::get('/test', function (\App\Services\Afl\AflService $service) {
         'get_current_round()' => get_current_round(),
         'has_match_today()' => has_match_today(),
         'standings' => $service->getTeamStandings(),
+        'scoreboard' => $service->getScoreboard(),
     ]);
 });
 

@@ -22,6 +22,13 @@ class AflDataUpdate implements ShouldBroadcast
     public $aflData;
 
     public AflService $aflService;
+    
+    /**
+     * Fresh response data to bypass any caching issues.
+     *
+     * @var array|null
+     */
+    public ?array $freshResponse = null;
 
     /**
      * Create a new event instance.
@@ -59,8 +66,20 @@ class AflDataUpdate implements ShouldBroadcast
      */
     public function broadcastWith(): array
     {
-        $scoreboard = $this->aflService->getScoreboard();
-        $standings = $this->aflService->getTeamStandings();
+        // If we have fresh response data, use it to hydrate the analyzer
+        if ($this->freshResponse) {
+            // Create a temporary analyzer with the fresh data
+            $analyzer = app(\App\Services\Afl\Utils\Analyzer::class);
+            $analyzer->hydrate($this->freshResponse);
+            
+            // Get scoreboard and standings directly from this analyzer
+            $scoreboard = $analyzer->getTeamScores();
+            $standings = $this->aflService->getTeamStandings(); // Still use service for standings
+        } else {
+            // Fall back to the service if no fresh data is available
+            $scoreboard = $this->aflService->getScoreboard();
+            $standings = $this->aflService->getTeamStandings();
+        }
 
         return [
             'has_match_today' => has_match_today(),
@@ -70,6 +89,7 @@ class AflDataUpdate implements ShouldBroadcast
             'response_code' => $this->aflData->response_code,
             'request_id' => $this->aflData->request_id,
             'fetch' => config('app.url') . '/api/v1/live/afl',
+            'round' => get_current_round()['round'],
             'scoreboard' => $scoreboard,
             'standings' => $standings
         ];

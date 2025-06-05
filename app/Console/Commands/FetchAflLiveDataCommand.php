@@ -73,8 +73,18 @@ class FetchAflLiveDataCommand extends Command
             'request_id' => Str::uuid(),
         ]);
 
-        // Broadcast the new update
-        event(new AflDataUpdate($latestData, $this->service));
+        // Create a fresh service instance
+        $freshService = app(\App\Services\Afl\AflService::class);
+        
+        // Create a custom event with the latest data to avoid any caching issues
+        $event = new AflDataUpdate($latestData, $freshService);
+        
+        // Set the response data directly on the event to ensure it's using the freshest data
+        // Make sure it's properly cast to an array
+        $event->freshResponse = is_array($response) ? $response : json_decode(json_encode($response), true);
+        
+        // Broadcast the event
+        event($event);
         $this->info('Event broadcast successfully');
         // show the details like the uri, response code, and response duration
         $this->info('Event Summary');
