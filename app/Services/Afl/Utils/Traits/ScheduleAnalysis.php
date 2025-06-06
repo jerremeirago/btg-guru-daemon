@@ -103,12 +103,13 @@ trait ScheduleAnalysis
     protected function formatScheduleData(array $match): array
     {
         $matchDate = Carbon::parse($match['@date']);
+        $matchTime = \Carbon\Carbon::parse($match['@time']);
 
         return [
             'match_id' => $match['@id'],
             'venue' => $match['@venue'],
             'date' => $matchDate->format('d.m.Y'),
-            'time' => $match['@time'] ?? $matchDate->format('H:i'),
+            'time' => $matchTime->format('H:i'),
             'status' => $match['@status'],
             'home_team' => $match['localteam']['@name'],
             'home_score' => $match['localteam']['@score'],
