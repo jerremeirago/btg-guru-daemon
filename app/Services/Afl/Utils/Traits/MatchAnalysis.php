@@ -16,10 +16,13 @@ trait MatchAnalysis
             $homeScore = (int) $match['localteam']['@score'];
             $awayScore = (int) $match['visitorteam']['@score'];
 
+            $matchDate = \Carbon\Carbon::parse($match['@date']);
+
             return [
                 'match_id' => $match['@id'],
                 'venue' => $match['@venue'],
-                'date' => $match['@date'],
+                'date' => $matchDate->format('d.m.Y'),
+                'time' => $match['@time'] ?? $matchDate->format('H:i'),
                 'status' => $match['@status'],
                 'home_team' => $match['localteam']['@name'],
                 'home_score' => $homeScore,
