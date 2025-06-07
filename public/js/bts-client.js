@@ -149,9 +149,16 @@ class BTSGuruClient {
         
         const channel = this.echo.channel(channelName);
         
-        // Set up event listeners
-        channel.listen('.afl.update', (data) => this.handleUpdate(channelName, data, handlers));
-        channel.listen('afl.update', (data) => this.handleUpdate(channelName, data, handlers));
+        // Set up event listeners based on channel name
+        if (channelName === 'sports.live.afl.match') {
+            // For the match-specific channel
+            channel.listen('.afl.update', (data) => this.handleUpdate(channelName, data, handlers));
+            channel.listen('afl.update', (data) => this.handleUpdate(channelName, data, handlers));
+        } else {
+            // For other channels (like sports.live.afl)
+            channel.listen('.afl.update', (data) => this.handleUpdate(channelName, data, handlers));
+            channel.listen('afl.update', (data) => this.handleUpdate(channelName, data, handlers));
+        }
         
         // Store channel reference
         this.channels[channelName] = {

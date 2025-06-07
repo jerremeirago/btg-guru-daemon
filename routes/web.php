@@ -11,10 +11,13 @@ Route::get('/', function () {
 
 Route::get('/test', function (\App\Services\Afl\AflService $service) {
     dump([
-        'get_current_round()' => get_current_round(),
-        'has_match_today()' => has_match_today(),
-        'standings' => $service->getTeamStandings(),
-        'scoreboard' => $service->getScoreboard(),
+        // 'get_current_round()' => get_current_round(),
+        // 'has_match_today()' => has_match_today(),
+        // 'standings' => $service->getTeamStandings(),
+        'scoreboard' => $service->getScoreboard()->toArray(),
+        // 'schedules' => $service->getUpcomingSchedules(),
+        'previous_match' => $service->getPreviousMatchData(),
+        'current_match' => $service->getCurrentMatchData(),
     ]);
 });
 

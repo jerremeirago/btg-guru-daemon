@@ -155,7 +155,7 @@ start_all_services() {
     start_service "afl-standings" "php artisan api:afl:standing --recurring"
 
     # Start queue listener
-    start_service "horizon" "php artisan horizon"
+    start_service "queue" "php artisan queue:work"
     
     log_message "All services startup sequence completed"
     log_message "You can monitor logs in: $LOG_DIR/"

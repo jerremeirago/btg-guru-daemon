@@ -62,6 +62,13 @@
             background: #cccccc;
             cursor: not-allowed;
         }
+        
+        .small-button {
+            font-size: 12px;
+            padding: 4px 8px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
         .status {
             display: inline-block;
             padding: 5px 10px;
@@ -222,11 +229,13 @@
             <div>
                 <button id="subscribe-afl">Subscribe to AFL</button>
                 <button id="unsubscribe-afl" disabled>Unsubscribe from AFL</button>
+                <button id="subscribe-afl-match">Subscribe to AFL Match</button>
+                <button id="unsubscribe-afl-match" disabled>Unsubscribe from AFL Match</button>
             </div>
         </div>
         
         <div class="card">
-            <h2>Event Log</h2>
+            <h2>Event Log <button id="copy-log" class="small-button">Copy to Clipboard</button></h2>
             <pre id="event-log">// Events will appear here</pre>
         </div>
         
@@ -266,7 +275,10 @@
         const clearLogBtn = document.getElementById('clear-log');
         const subscribeAflBtn = document.getElementById('subscribe-afl');
         const unsubscribeAflBtn = document.getElementById('unsubscribe-afl');
+        const subscribeAflMatchBtn = document.getElementById('subscribe-afl-match');
+        const unsubscribeAflMatchBtn = document.getElementById('unsubscribe-afl-match');
         const eventLogEl = document.getElementById('event-log');
+        const copyLogBtn = document.getElementById('copy-log');
         const lastUpdateEl = document.getElementById('last-update');
         const responseCodeEl = document.getElementById('response-code');
         const apiCallTimeEl = document.getElementById('api-call-time');
@@ -510,9 +522,76 @@
             unsubscribeAflBtn.disabled = true;
         });
         
+        // AFL Match channel subscription
+        subscribeAflMatchBtn.addEventListener('click', () => {
+            if (!btsClient || !btsClient.isConnected) {
+                log('Not connected to WebSocket server');
+                return;
+            }
+            
+            try {
+                log('Subscribing to sports.live.afl.match channel...');
+                
+                btsClient.subscribe('sports.live.afl.match', {
+                    onUpdate: (data) => {
+                        log('Received AFL Match update notification', data);
+                        lastReceivedData = data;
+                        updateMetadata(data);
+                        updatePreview(data);
+                    },
+                    onDataReceived: (data, metadata) => {
+                        log('Received full AFL Match data');
+                        fullData = data;
+                        updateFullData(data);
+                    }
+                });
+                
+                subscribeAflMatchBtn.disabled = true;
+                unsubscribeAflMatchBtn.disabled = false;
+                
+            } catch (error) {
+                log('Error subscribing to AFL Match: ' + error.message);
+            }
+        });
+        
+        unsubscribeAflMatchBtn.addEventListener('click', () => {
+            if (!btsClient || !btsClient.isConnected) {
+                return;
+            }
+            
+            btsClient.unsubscribe('sports.live.afl.match');
+            log('Unsubscribed from sports.live.afl.match channel');
+            
+            subscribeAflMatchBtn.disabled = false;
+            unsubscribeAflMatchBtn.disabled = true;
+        });
+        
         // Configuration event listeners
         applyConfigBtn.addEventListener('click', applyConfig);
         resetConfigBtn.addEventListener('click', resetConfig);
+        
+        // Copy event log to clipboard
+        copyLogBtn.addEventListener('click', () => {
+            const logText = eventLogEl.textContent;
+            navigator.clipboard.writeText(logText)
+                .then(() => {
+                    // Show temporary success message
+                    const originalText = copyLogBtn.textContent;
+                    copyLogBtn.textContent = 'Copied!';
+                    copyLogBtn.style.background = '#45a049';
+                    
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        copyLogBtn.textContent = originalText;
+                        copyLogBtn.style.background = '';
+                    }, 2000);
+                    
+                    log('Event log copied to clipboard');
+                })
+                .catch(err => {
+                    log('Failed to copy event log: ' + err.message);
+                });
+        });
         
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {

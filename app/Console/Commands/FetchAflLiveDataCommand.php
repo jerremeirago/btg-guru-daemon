@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Services\Afl\AflService;
 use Illuminate\Console\Command;
 use App\Models\AflApiResponse;
-use App\Events\AflDataUpdate;
+use App\Events\{AflDataUpdate, AflGetLiveMatch};
 use Illuminate\Support\Str;
 use App\Jobs\AflLiveDataSyncJob;
 
@@ -75,16 +75,18 @@ class FetchAflLiveDataCommand extends Command
 
         // Create a fresh service instance
         $freshService = app(\App\Services\Afl\AflService::class);
-        
+
         // Create a custom event with the latest data to avoid any caching issues
         $event = new AflDataUpdate($latestData, $freshService);
-        
+        $matchEvent = new AflGetLiveMatch($latestData, $freshService);
+
         // Set the response data directly on the event to ensure it's using the freshest data
         // Make sure it's properly cast to an array
         $event->freshResponse = is_array($response) ? $response : json_decode(json_encode($response), true);
-        
+
         // Broadcast the event
         event($event);
+        event($matchEvent);
         $this->info('Event broadcast successfully');
         // show the details like the uri, response code, and response duration
         $this->info('Event Summary');

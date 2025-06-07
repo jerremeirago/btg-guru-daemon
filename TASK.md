@@ -5,36 +5,10 @@
 [x] - if there is not match today, return the data schedules (as the scoreboard)
 [x] - setup a job that will the standings every 12 hour (https://www.goalserve.com/getfeed/9645f122eef946c1c7bd08dd5ac0e712/afl/standings) 
 
-
-
-Raw Data
-```txt
-for JSON output please add "?json=1" to the feed URL
-
---------------------------AFL AUSTRALIAN RULES-------------------
-
-
-
-https://beatingthespreadguru.com/afl/matchcast_box/10457/12
-    -> http://www.goalserve.com/getfeed/9645f122eef946c1c7bd08dd5ac0e712/afl/home - livescore
-    -> http://www.goalserve.com/getfeed/9645f122eef946c1c7bd08dd5ac0e712/afl/schedule
-
-http://www.goalserve.com/getfeed/9645f122eef946c1c7bd08dd5ac0e712/afl/standings
-
-Old game stats by date attribute
-
-https://www.goalserve.com/getfeed/9645f122eef946c1c7bd08dd5ac0e712/afl/home?date=19.06.2021
-
-http://www.goalserve.com/getfeed/9645f122eef946c1c7bd08dd5ac0e712/afl/1019-stats - team stats
-http://www.goalserve.com/getfeed/9645f122eef946c1c7bd08dd5ac0e712/afl/1019-rosters - team rosters
-
-Pregame odds
-
-https://www.goalserve.com/getfeed/9645f122eef946c1c7bd08dd5ac0e712/getodds/soccer?cat=afl_10
-```
-
-
-https://beatingthespreadguru.com/afl
-https://beatingthespreadguru.com/afl/scores
-https://beatingthespreadguru.com/afl/matchcast_box/10457/12
+[ ] - Setup a pipeline that automatically triggers a deployment on main branch
+[ ] - (get_match_data) create a helper function that identies the teams that's going to play today
+    - [ ] - has_match_today?
+    - [ ] - get_current_round
+    - [ ] - get_match_id
+[ ] - based on the `get_match_data` we should then run a command that retrieves the matchdata similar to AFL Sync Command
 

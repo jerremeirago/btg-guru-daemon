@@ -104,4 +104,19 @@ class AflService
     {
         return $this->analyzer->getTeamStandings();
     }
+
+    public function getUpcomingSchedules()
+    {
+        return $this->analyzer->getNextMatchSchedule();
+    }
+
+    public function getCurrentMatchData(): array
+    {
+        return $this->analyzer->getCurrentMatchData();
+    }
+
+    public function getPreviousMatchData(): array
+    {
+        return $this->analyzer->getPreviousMatchData();
+    }
 }

@@ -6,6 +6,236 @@ use Illuminate\Support\Collection;
 
 trait MatchAnalysis
 {
+    public function getCurrentMatchData()
+    {
+        if (empty($this->matches)) {
+            return null;
+        }
+
+        // Get current time in AEST timezone
+        $now = now()->setTimezone('Australia/Sydney');
+
+        // First priority: Find any match that is currently in progress
+        foreach ($this->matches as $match) {
+            // Check for matches that are in progress (not 'Full Time' and not 'Not Started')
+            if ($match['@status'] !== 'Full Time' && $match['@status'] !== 'Not Started') {
+                // This is a match in progress (1st Qtr, 2nd Qtr, etc.)
+                return $this->restructureMatchData($match);
+            }
+        }
+
+        // Second priority: Find the next upcoming match
+        foreach ($this->matches as $match) {
+            // Parse match date and time in AEST
+            $matchDateTime = \Carbon\Carbon::createFromFormat(
+                'd.m.Y H:i',
+                $match['@date'] . ' ' . $match['@time'],
+                'Australia/Sydney'
+            );
+
+            // If match is not started and is in the future
+            if ($match['@status'] === 'Not Started' && $matchDateTime->greaterThanOrEqualTo($now)) {
+                return $this->restructureMatchData($match);
+            }
+        }
+
+        // If no upcoming matches found, return the last match in the list
+        $lastMatch = end($this->matches) ?: null;
+        if ($lastMatch) {
+            return $this->restructureMatchData($lastMatch);
+        }
+        return null;
+    }
+
+    /**
+     * Helper method to restructure match data consistently
+     * 
+     * @param array $match The match data to restructure
+     * @return array The restructured match data
+     */
+    protected function restructureMatchData($match)
+    {
+        // Restructure events if they exist
+        if (isset($match['events'])) {
+            $match['events'] = $this->restructureEventsByPeriod($match['events']);
+        }
+
+        // Restructure lineups if they exist
+        if (isset($match['lineups'])) {
+            $match['lineups'] = $this->restructureLineups($match['lineups']);
+        }
+
+        // Restructure quarters if they exist
+        if (isset($match['quarters'])) {
+            $match['quarters'] = $this->restructureQuarters($match['quarters'], $match);
+        }
+
+        return $match;
+    }
+
+    /**
+     * Get the most recent completed match data
+     * 
+     * @return array|null The previous match data or null if none found
+     */
+    public function getPreviousMatchData()
+    {
+        if (empty($this->matches)) {
+            return null;
+        }
+
+        // Get current time in AEST timezone
+        $now = now()->setTimezone('Australia/Sydney');
+        $previousMatch = null;
+
+        // Find the most recent completed match
+        foreach ($this->matches as $match) {
+            // Parse match date and time in AEST
+            $matchDateTime = \Carbon\Carbon::createFromFormat(
+                'd.m.Y H:i',
+                $match['@date'] . ' ' . $match['@time'],
+                'Australia/Sydney'
+            );
+
+            // If match is completed (Full Time) and in the past
+            if ($match['@status'] === 'Full Time' && $matchDateTime->lessThan($now)) {
+                // Keep track of the most recent completed match
+                if (!$previousMatch) {
+                    $previousMatch = $match;
+                } else {
+                    $previousMatchDateTime = \Carbon\Carbon::createFromFormat(
+                        'd.m.Y H:i',
+                        $previousMatch['@date'] . ' ' . $previousMatch['@time'],
+                        'Australia/Sydney'
+                    );
+
+                    // Update if this match is more recent than our current previous match
+                    if ($matchDateTime->greaterThan($previousMatchDateTime)) {
+                        $previousMatch = $match;
+                    }
+                }
+            }
+        }
+
+        // Restructure data if we have a match
+        if ($previousMatch) {
+            $previousMatch = $this->restructureMatchData($previousMatch);
+        }
+
+        return $previousMatch;
+    }
+
+    /**
+     * Restructure events by period to make them more accessible
+     * 
+     * @param array $events The original events array
+     * @return array The restructured events array with period as keys
+     */
+    protected function restructureEventsByPeriod($events)
+    {
+        // If events is empty or doesn't have the expected structure, return as is
+        if (empty($events) || !isset($events['event']) || !is_array($events['event'])) {
+            return $events;
+        }
+
+        $restructuredEvents = [];
+
+        // Loop through all events and organize them by period
+        foreach ($events['event'] as $event) {
+            if (isset($event['@period'])) {
+                $period = $event['@period'];
+                $restructuredEvents[$period][] = $event;
+            }
+        }
+
+        return $restructuredEvents;
+    }
+
+    /**
+     * Restructure lineups to make them more accessible
+     * 
+     * @param array $lineups The original lineups array
+     * @return array The restructured lineups array with team types as keys
+     */
+    protected function restructureLineups($lineups)
+    {
+        // If lineups is empty or doesn't have the expected structure, return as is
+        if (empty($lineups) || !isset($lineups['lineup']) || !is_array($lineups['lineup'])) {
+            return $lineups;
+        }
+
+        $restructuredLineups = [];
+
+        // Loop through lineup entries and organize by team type
+        foreach ($lineups['lineup'] as $lineup) {
+            if (isset($lineup['@team']) && isset($lineup['player'])) {
+                $teamType = $lineup['@team'];
+                $restructuredLineups[$teamType] = $lineup['player'];
+            }
+        }
+
+        return $restructuredLineups;
+    }
+
+    /**
+     * Restructure quarters data to make it more accessible and add additional information
+     * 
+     * @param array $quarters The original quarters array
+     * @param array $match The full match data containing team information
+     * @return array The restructured quarters array
+     */
+    protected function restructureQuarters($quarters, $match)
+    {
+        // If quarters is empty or doesn't have the expected structure, return as is
+        if (empty($quarters) || !isset($quarters['quarter'])) {
+            return $quarters;
+        }
+
+        // Get team names
+        $homeTeamName = $match['localteam']['@name'] ?? 'Home Team';
+        $awayTeamName = $match['visitorteam']['@name'] ?? 'Away Team';
+
+        $restructuredQuarters = [];
+        
+        // Handle both array and single item cases
+        $quarterData = $quarters['quarter'];
+        
+        // If it's a single quarter (not in an array), convert it to an array
+        if (!isset($quarterData[0]) && is_array($quarterData)) {
+            $quarterData = [$quarterData];
+        }
+        
+        // Make sure we have an array to iterate
+        if (!is_array($quarterData)) {
+            return $quarters;
+        }
+
+        // Loop through quarters and add additional information
+        foreach ($quarterData as $quarter) {
+            if (!isset($quarter['@name'])) {
+                continue;
+            }
+            
+            $quarterNumber = $quarter['@name'];
+
+            // Add team names and formatted stats
+            $quarter['@homeTeam'] = $homeTeamName;
+            $quarter['@awayTeam'] = $awayTeamName;
+
+            // Format stats as goals.behinds
+            if (isset($quarter['@homeGoals']) && isset($quarter['@homeBehinds'])) {
+                $quarter['@homeStats'] = $quarter['@homeGoals'] . '.' . $quarter['@homeBehinds'];
+            }
+
+            if (isset($quarter['@awayGoals']) && isset($quarter['@awayBehinds'])) {
+                $quarter['@awayStats'] = $quarter['@awayGoals'] . '.' . $quarter['@awayBehinds'];
+            }
+
+            $restructuredQuarters[$quarterNumber] = $quarter;
+        }
+
+        return $restructuredQuarters;
+    }
     /**
      * Get all team scores with match details, usually used in showing
      *rscoreboard

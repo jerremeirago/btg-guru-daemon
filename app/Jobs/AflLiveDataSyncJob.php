@@ -39,7 +39,7 @@ class AflLiveDataSyncJob implements ShouldQueue
     }
 
     /**
-     * Execute the job.
+     * Execute the job.tc
      *
      * @return void
      */

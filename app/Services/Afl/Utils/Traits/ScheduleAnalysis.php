@@ -43,9 +43,10 @@ trait ScheduleAnalysis
         $allRounds = isset($rounds['@id']) ? collect([$rounds][0]['week']) : collect($rounds[0]['week']);
 
         $matches = $allRounds->firstWhere('@number', $currentRoundNumber);
+        $round = (int) $matches['@number'] ?? $currentRoundNumber;
 
-        return collect($matches['match'])->map(function ($match) {
-            return $this->formatScheduleData($match);
+        return collect($matches['match'])->map(function ($match) use ($round) {
+            return $this->formatScheduleData($match, $round);
         });
     }
 
@@ -100,12 +101,13 @@ trait ScheduleAnalysis
      * @param array $match
      * @return array
      */
-    protected function formatScheduleData(array $match): array
+    protected function formatScheduleData(array $match, int $round): array
     {
         $matchDate = Carbon::parse($match['@date']);
         $matchTime = \Carbon\Carbon::parse($match['@time']);
 
         return [
+            'round' => $round,
             'match_id' => $match['@id'],
             'venue' => $match['@venue'],
             'date' => $matchDate->format('d.m.Y'),
