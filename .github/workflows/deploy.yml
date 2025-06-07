@@ -10,12 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     environment: Production
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
       - name: Execute remote SSH commands
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
-          key_format: openssh
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
           timeout: 120s
