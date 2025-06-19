@@ -3,6 +3,7 @@
 namespace App\Services\RapidApi;
 
 use App\Models\ApiRequest;
+use App\Services\Monitoring\MetricsService;
 use App\Services\RetryService;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
@@ -46,6 +47,13 @@ abstract class RapidApiService
      * @var \App\Services\RetryService
      */
     protected RetryService $retryService;
+    
+    /**
+     * The metrics service instance.
+     *
+     * @var \App\Services\Monitoring\MetricsService|null
+     */
+    protected ?MetricsService $metricsService = null;
 
     /**
      * Default cache TTL in seconds.
@@ -83,6 +91,11 @@ abstract class RapidApiService
             config('services.rapidapi.retry.base_delay_ms', 1000),
             config('services.rapidapi.retry.max_delay_ms', 10000)
         );
+        
+        // Initialize metrics service if available
+        if (class_exists(MetricsService::class)) {
+            $this->metricsService = app(MetricsService::class);
+        }
     }
 
     /**
@@ -113,7 +126,16 @@ abstract class RapidApiService
 
         // Try to get from cache first
         if ($cachedResponse = Cache::get($cacheKey)) {
+            // Track cache hit in metrics if metrics service is available
+            if ($this->metricsService) {
+                $this->metricsService->incrementCacheHits();
+            }
             return $cachedResponse;
+        }
+        
+        // Track cache miss in metrics if metrics service is available
+        if ($this->metricsService) {
+            $this->metricsService->incrementCacheMisses();
         }
 
         try {

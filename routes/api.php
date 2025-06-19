@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AflController;
+use App\Http\Controllers\Api\MetricsController;
 use App\Events\AflDataUpdate;
 use App\Models\AflApiResponse;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,12 @@ Route::prefix('v1')->group(function () {
     // Public routes
     Route::get('/health', function () {
         return response()->json(['status' => 'ok']);
+    });
+    
+    // Metrics routes for Prometheus and Grafana
+    Route::prefix('metrics')->group(function () {
+        Route::get('/prometheus', [MetricsController::class, 'export']);
+        Route::get('/dashboard', [MetricsController::class, 'dashboard']);
     });
 
     // Auth routes
